@@ -58,6 +58,40 @@ def load_user_artists(path: Path | str) -> pd.DataFrame:
     return df[[USER_COL, ITEM_COL, WEIGHT_COL]].reset_index(drop=True)
 
 
+def load_tags(path: Path | str) -> pd.DataFrame:
+    """Load the tag vocabulary (id -> human-readable value).
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``[tag_id, tag_value]``.
+    """
+    df = _read_tsv(path)
+    df = df.rename(columns={"tagID": "tag_id", "tagValue": "tag_value"})
+    if "tag_id" not in df.columns or "tag_value" not in df.columns:
+        raise ValueError(f"tags is missing columns; got {list(df.columns)}")
+    return df[["tag_id", "tag_value"]].reset_index(drop=True)
+
+
+def load_user_tagged_artists(path: Path | str) -> pd.DataFrame:
+    """Load (user, artist, tag) assignments - the content metadata.
+
+    Each row records that a user applied a tag to an artist. Aggregated across users,
+    these become each artist's tag profile.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``[user_id, artist_id, tag_id]`` (the date columns are dropped).
+    """
+    df = _read_tsv(path)
+    df = df.rename(columns={"userID": USER_COL, "artistID": ITEM_COL, "tagID": "tag_id"})
+    expected = {USER_COL, ITEM_COL, "tag_id"}
+    if not expected.issubset(df.columns):
+        raise ValueError(f"user_taggedartists missing columns; got {list(df.columns)}")
+    return df[[USER_COL, ITEM_COL, "tag_id"]].reset_index(drop=True)
+
+
 def load_artists(path: Path | str) -> pd.DataFrame:
     """Load the artist catalogue (id -> name).
 

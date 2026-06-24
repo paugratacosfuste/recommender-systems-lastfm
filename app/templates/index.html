@@ -37,6 +37,13 @@
         <span>MAP@{{ k }} <strong>{{ '%.4f'|format(mean_ap) }}</strong></span>
         <span>NDCG@{{ k }} <strong>{{ '%.4f'|format(ndcg) }}</strong></span>
       </div>
+      {% if coverage is not none %}
+      <div class="metric-row beyond">
+        <span>Coverage <strong>{{ '%.3f'|format(coverage) }}</strong></span>
+        <span>Diversity <strong>{{ '%.3f'|format(diversity) }}</strong></span>
+        <span>Novelty <strong>{{ '%.2f'|format(novelty) }}</strong></span>
+      </div>
+      {% endif %}
     </section>
 
     <h2>Top {{ recommendations|length }} for user {{ selected_user }}</h2>

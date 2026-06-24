@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from recsys.config import SAMPLE_DIR
-from recsys.data.loader import load_user_artists
+from recsys.data.loader import load_user_artists, load_user_tagged_artists
 
 
 @pytest.fixture
@@ -17,3 +17,10 @@ def sample_interactions() -> pd.DataFrame:
         artist1=240, artist2=160, artist4=45, artist3=40, artist5=5
     """
     return load_user_artists(SAMPLE_DIR / "user_artists.dat")
+
+
+@pytest.fixture
+def sample_tagged_artists() -> pd.DataFrame:
+    """Tiny tag fixture: artists 1/4/5 = electronic+idm, 2 = electronic+art pop,
+    3 = alternative+rock."""
+    return load_user_tagged_artists(SAMPLE_DIR / "user_taggedartists.dat")

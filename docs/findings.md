@@ -5,6 +5,53 @@ method comparison, final remarks). Newest entries at the top.
 
 ---
 
+## Module 5 - Content-based filtering & beyond-accuracy metrics (2026-06-25)
+
+**Goal:** add a content-based method (artist tags) and the beyond-accuracy metrics that
+make the "accuracy is not enough" argument measurable.
+
+**What was built**
+- Tag loaders (`load_tags`, `load_user_tagged_artists`).
+- `src/recsys/models/content.py`: `build_artist_tag_profiles` (TF-IDF over the artist x tag
+  matrix) and `ContentBasedRecommender` (play-weighted user profile in tag space, cosine
+  recommend). Can recommend cold-start artists CF cannot.
+- `src/recsys/eval/beyond_accuracy.py`: `catalogue_coverage`, `intra_list_diversity`
+  (1 - mean pairwise tag cosine), `novelty` (mean self-information), `build_item_popularity`,
+  and `BeyondAccuracyInputs`. `evaluate()`/`compare_models()` optionally report them.
+- App: Content-based added to the switcher; page now shows coverage / diversity / novelty.
+- `scripts/evaluate_baselines.py` extended with content + beyond-accuracy columns.
+- Tests: 65 total, 93% coverage.
+
+**Full method comparison (k=10, held-out split, seed 42, 1,884 users)**
+
+| Method                | P@10   | NDCG@10 | Coverage | Diversity | Novelty |
+|-----------------------|-------:|--------:|---------:|----------:|--------:|
+| Item-item CF          | 0.1749 | 0.2174  | 0.156    | 0.616     | 4.75    |
+| User-user CF          | 0.1292 | 0.1598  | 0.018    | 0.619     | 2.98    |
+| Content-based         | 0.0994 | 0.1144  | 0.143    | 0.338     | 6.57    |
+| Popularity (listeners)| 0.0691 | 0.0798  | 0.0015   | 0.627     | 2.44    |
+| Popularity (plays)    | 0.0602 | 0.0653  | 0.0014   | 0.676     | 2.68    |
+| Popularity (damped)   | 0.0430 | 0.0441  | 0.0012   | 0.765     | 3.44    |
+
+**The "accuracy is not enough" story (deck centrepiece)**
+- **Popularity bias is now quantified:** popularity methods reach ~0.001 coverage - the
+  same ~25 artists served to all 1,884 users. CF and content cover ~15% of the catalogue.
+- **No single winner across objectives:** item-item CF wins accuracy *and* coverage;
+  content-based wins novelty (6.57, the most non-obvious picks) but has the lowest diversity
+  (0.34) because tag-similar recommendations are internally homogeneous (filter bubble).
+- **Damped popularity** trades accuracy for the highest intra-list diversity (0.77) -
+  the deliberate accuracy-vs-bias trade-off flagged back in Module 3, now confirmed.
+- Diversity caveat: it is measured in tag space, so methods that ignore tags (popularity)
+  can still score high; report it alongside coverage/novelty, not alone.
+
+**Definition of done:** met. Content model in app + switcher; accuracy and beyond-accuracy
+reported and contrasted across all six methods; tests green at >= 80%.
+
+**Next:** Module 6 - matrix factorisation (implicit ALS, hand-implemented), adding
+latency / scalability to the comparison.
+
+---
+
 ## Module 4 - Collaborative filtering (2026-06-24)
 
 **Goal:** first personalised methods (memory-based kNN) + richer ranking metrics.

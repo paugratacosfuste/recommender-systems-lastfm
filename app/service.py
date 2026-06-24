@@ -1,8 +1,8 @@
 """Application service layer: load data, fit the available models, serve recommendations.
 
 Built once at app startup and reused across requests. A small method registry maps each
-selectable label to a fitted model plus its offline metrics. Later modules (CF, content,
-matrix factorisation) plug into the same registry - the app code does not change.
+selectable label to a fitted model plus its offline metrics (accuracy and beyond-accuracy).
+Later modules plug into the same registry - the app code does not change.
 """
 
 from __future__ import annotations
@@ -17,23 +17,20 @@ from recsys.config import (
     RAW_DIR,
     USER_ARTISTS_FILE,
     USER_COL,
+    USER_TAGGED_ARTISTS_FILE,
 )
-from recsys.data.loader import load_artists, load_user_artists
+from recsys.data.loader import (
+    load_artists,
+    load_user_artists,
+    load_user_tagged_artists,
+)
 from recsys.data.split import leave_n_out_split
+from recsys.eval.beyond_accuracy import BeyondAccuracyInputs, build_item_popularity
 from recsys.eval.harness import evaluate
 from recsys.models.base import BaseRecommender
 from recsys.models.cf import ItemKNNRecommender, UserKNNRecommender
+from recsys.models.content import ContentBasedRecommender, build_artist_tag_profiles
 from recsys.models.popularity import PopularityRecommender
-
-# Selectable methods: display label -> factory building an unfitted model.
-# Personalised methods are listed first (they are the better default).
-METHOD_FACTORIES: dict[str, callable] = {
-    "Item-item CF": lambda: ItemKNNRecommender(),
-    "User-user CF": lambda: UserKNNRecommender(),
-    "Popularity (listeners)": lambda: PopularityRecommender(strategy="listeners"),
-    "Popularity (plays)": lambda: PopularityRecommender(strategy="plays"),
-    "Popularity (damped)": lambda: PopularityRecommender(strategy="damped"),
-}
 
 
 @dataclass
@@ -50,19 +47,40 @@ class RecommenderService:
     def __init__(self, top_n: int = DEFAULT_TOP_N) -> None:
         self.top_n = top_n
         interactions = load_user_artists(RAW_DIR / USER_ARTISTS_FILE)
+        tagged = load_user_tagged_artists(RAW_DIR / USER_TAGGED_ARTISTS_FILE)
         artists = load_artists(RAW_DIR / ARTISTS_FILE)
         self._artist_name = dict(zip(artists[ITEM_COL], artists["name"]))
 
         self._train, self._test = leave_n_out_split(interactions, seed=DEFAULT_SEED)
         self.user_ids = sorted(self._train[USER_COL].unique().tolist())
-        self.methods = list(METHOD_FACTORIES)
 
-        # One fitted model (for serving) and one metrics row (offline quality) per method.
+        # Side data for beyond-accuracy metrics (method-independent).
+        profiles, artist_ids = build_artist_tag_profiles(tagged)
+        beyond = BeyondAccuracyInputs(
+            profiles=profiles,
+            item_to_row={int(a): i for i, a in enumerate(artist_ids)},
+            popularity=build_item_popularity(self._train),
+            n_catalogue=len(artists),
+        )
+
+        # Personalised methods first (they are the better default).
+        factories = {
+            "Item-item CF": ItemKNNRecommender,
+            "User-user CF": UserKNNRecommender,
+            "Content-based": lambda: ContentBasedRecommender(tagged),
+            "Popularity (listeners)": lambda: PopularityRecommender("listeners"),
+            "Popularity (plays)": lambda: PopularityRecommender("plays"),
+            "Popularity (damped)": lambda: PopularityRecommender("damped"),
+        }
+        self.methods = list(factories)
+
         self._models: dict[str, BaseRecommender] = {}
         self._metrics: dict[str, dict[str, float]] = {}
-        for label, factory in METHOD_FACTORIES.items():
+        for label, factory in factories.items():
             self._models[label] = factory().fit(self._train)
-            self._metrics[label] = evaluate(factory(), self._train, self._test, k=top_n)
+            self._metrics[label] = evaluate(
+                factory(), self._train, self._test, k=top_n, beyond=beyond
+            )
 
     def _resolve(self, method: str | None) -> str:
         """Return a valid method label, falling back to the first one."""

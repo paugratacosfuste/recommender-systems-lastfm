@@ -17,6 +17,8 @@ SAMPLE_DIR = DATA_DIR / "sample"
 # Raw dataset filenames (Last.fm HetRec 2011).
 USER_ARTISTS_FILE = "user_artists.dat"
 ARTISTS_FILE = "artists.dat"
+TAGS_FILE = "tags.dat"
+USER_TAGGED_ARTISTS_FILE = "user_taggedartists.dat"
 
 # Standardised column names used everywhere downstream of the loaders.
 USER_COL = "user_id"
