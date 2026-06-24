@@ -5,6 +5,45 @@ method comparison, final remarks). Newest entries at the top.
 
 ---
 
+## Module 2 - Dataset, EDA & preprocessing (2026-06-24)
+
+**Goal:** understand the data and turn it into model-ready structures (sparse matrix +
+confidence weights), with charts for the deck.
+
+**What was built**
+- `src/recsys/data/preprocess.py`: `IndexMapping` (id <-> contiguous matrix index),
+  `build_interaction_matrix` (sparse CSR), `log_scale` (log1p), and `confidence`
+  (Hu/Koren/Volinsky `c = 1 + alpha*log(1+r/eps)`).
+- `src/recsys/data/eda.py`: `gini`, `summary_stats`, `popularity_curve`, `top_k_play_share`.
+- `scripts/build_processed.py`: caches `data/processed/` (interactions.parquet with
+  log_weight + confidence columns, user_item_matrix.npz, mappings.npz).
+- `notebooks/01_eda.ipynb`: executed EDA with figures saved to `docs/figures/`.
+- Tests: 34 total, 93% coverage.
+
+**Key numbers**
+- 1,892 users x 17,632 artists, 92,834 interactions. **Sparsity 99.72%.**
+- Median **50 artists per user** (the dataset keeps ~top-50 per user); median
+  **1 listener per artist** - a massive cold/long tail.
+- Popularity concentration: **plays Gini = 0.893.** Top 50 artists = 34.8% of all plays,
+  top 100 = 43.7%, top 500 = 67.9%.
+
+**Figures (for the deck):** `play_count_distribution.png`, `activity_distributions.png`,
+`long_tail_lorenz.png`.
+
+**Why it matters**
+- Extreme sparsity + heavy tail means collaborative methods will struggle on niche artists;
+  log-scaling/confidence weighting is justified before CF and matrix factorisation.
+- The high Gini is the evidence behind "accuracy is not enough": a popularity baseline can
+  score acceptably while ignoring 99% of the catalogue (popularity bias).
+
+**Definition of done:** met. Processed artifacts reproducible, EDA charts generated, all
+helpers tested at >= 80% coverage.
+
+**Next:** Module 3 - extend the evaluation harness (Recall@K alongside Precision@K) and
+formalise the non-personalised baseline comparison.
+
+---
+
 ## Phase 0 - Thin end-to-end slice (2026-06-24)
 
 **Goal:** prove the whole pipeline works before deepening anything: load data -> popularity
