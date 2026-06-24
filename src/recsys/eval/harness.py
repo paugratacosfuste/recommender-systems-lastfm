@@ -12,7 +12,12 @@ import time
 import pandas as pd
 
 from recsys.config import ITEM_COL, USER_COL
-from recsys.eval.metrics import precision_at_k, recall_at_k
+from recsys.eval.metrics import (
+    average_precision_at_k,
+    ndcg_at_k,
+    precision_at_k,
+    recall_at_k,
+)
 from recsys.models.base import BaseRecommender
 
 
@@ -38,7 +43,8 @@ def evaluate(
     Returns
     -------
     dict
-        ``{"precision_at_k", "recall_at_k", "k", "n_users", "fit_seconds"}``.
+        ``{"precision_at_k", "recall_at_k", "map_at_k", "ndcg_at_k", "k", "n_users",
+        "fit_seconds"}``.
     """
     start = time.perf_counter()
     model.fit(train)
@@ -48,15 +54,25 @@ def evaluate(
 
     precisions: list[float] = []
     recalls: list[float] = []
+    average_precisions: list[float] = []
+    ndcgs: list[float] = []
     for user_id, relevant in relevant_by_user.items():
         recommended = model.recommend(user_id, n=k, exclude_seen=True)
         precisions.append(precision_at_k(recommended, relevant, k))
         recalls.append(recall_at_k(recommended, relevant, k))
+        average_precisions.append(average_precision_at_k(recommended, relevant, k))
+        ndcgs.append(ndcg_at_k(recommended, relevant, k))
 
     n = len(precisions)
+
+    def mean(values: list[float]) -> float:
+        return sum(values) / n if n else 0.0
+
     return {
-        "precision_at_k": sum(precisions) / n if n else 0.0,
-        "recall_at_k": sum(recalls) / n if n else 0.0,
+        "precision_at_k": mean(precisions),
+        "recall_at_k": mean(recalls),
+        "map_at_k": mean(average_precisions),
+        "ndcg_at_k": mean(ndcgs),
         "k": float(k),
         "n_users": float(n),
         "fit_seconds": fit_seconds,

@@ -22,12 +22,16 @@ from recsys.data.loader import load_artists, load_user_artists
 from recsys.data.split import leave_n_out_split
 from recsys.eval.harness import evaluate
 from recsys.models.base import BaseRecommender
+from recsys.models.cf import ItemKNNRecommender, UserKNNRecommender
 from recsys.models.popularity import PopularityRecommender
 
 # Selectable methods: display label -> factory building an unfitted model.
+# Personalised methods are listed first (they are the better default).
 METHOD_FACTORIES: dict[str, callable] = {
-    "Popularity (plays)": lambda: PopularityRecommender(strategy="plays"),
+    "Item-item CF": lambda: ItemKNNRecommender(),
+    "User-user CF": lambda: UserKNNRecommender(),
     "Popularity (listeners)": lambda: PopularityRecommender(strategy="listeners"),
+    "Popularity (plays)": lambda: PopularityRecommender(strategy="plays"),
     "Popularity (damped)": lambda: PopularityRecommender(strategy="damped"),
 }
 

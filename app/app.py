@@ -43,6 +43,8 @@ def index() -> str:
         selected_method=selected_method,
         precision=metrics["precision_at_k"],
         recall=metrics["recall_at_k"],
+        mean_ap=metrics["map_at_k"],
+        ndcg=metrics["ndcg_at_k"],
         k=int(metrics["k"]),
         n_eval_users=int(metrics["n_users"]),
     )

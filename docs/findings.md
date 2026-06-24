@@ -5,6 +5,50 @@ method comparison, final remarks). Newest entries at the top.
 
 ---
 
+## Module 4 - Collaborative filtering (2026-06-24)
+
+**Goal:** first personalised methods (memory-based kNN) + richer ranking metrics.
+
+**What was built**
+- `src/recsys/models/cf.py`: hand-implemented sparse cosine similarity
+  (`cosine_similarity_rows`, with optional top-k neighbour pruning), `ItemKNNRecommender`
+  (item-item) and `UserKNNRecommender` (user-user), both on the log-scaled implicit matrix.
+- MAP (`average_precision_at_k`) and NDCG (`ndcg_at_k`) added to `eval/metrics.py`;
+  `evaluate()` now reports Precision, Recall, MAP, NDCG, and `fit_seconds`.
+- App switcher now lists Item-item CF and User-user CF (personalised methods first); the
+  page shows all four accuracy metrics.
+- `scripts/evaluate_baselines.py` extended -> `docs/method_comparison.csv`.
+- Tests: 53 total, 95% coverage.
+
+**Method comparison (k=10, held-out split, seed 42, 1,884 users)**
+
+| Method                | Precision@10 | Recall@10 | MAP@10 | NDCG@10 | fit (s) |
+|-----------------------|-------------:|----------:|-------:|--------:|--------:|
+| **Item-item CF**      | **0.1749**   | 0.1775    | 0.1135 | 0.2174  | 0.02    |
+| User-user CF          | 0.1292       | 0.1329    | 0.0805 | 0.1598  | 0.03    |
+| Popularity (listeners)| 0.0691       | 0.0703    | 0.0351 | 0.0798  | 0.01    |
+| Popularity (plays)    | 0.0602       | 0.0615    | 0.0267 | 0.0653  | 0.01    |
+| Popularity (damped)   | 0.0430       | 0.0437    | 0.0153 | 0.0441  | 0.01    |
+
+**Why it matters**
+- **Personalisation more than doubles accuracy:** Item-item CF hits Precision@10 0.175 vs
+  the best baseline 0.069 (~2.5x), and NDCG 0.217 vs 0.080. Clear evidence that "who
+  co-listens with what" beats "what is globally popular".
+- Item-item beats user-user here - artist-artist co-occurrence is a stronger, more stable
+  signal than user-user overlap given extreme sparsity.
+- CF can surface niche artists the popularity baseline never would, which should show up as
+  better coverage/novelty once those beyond-accuracy metrics arrive (Module 5).
+- Both fit in well under a second; scalability is fine at this dataset size (revisit with
+  top-k pruning / approximate neighbours if scaling up).
+
+**Definition of done:** met. CF wired into app + switcher; full accuracy metrics vs the
+baseline recorded; tests green at >= 80%.
+
+**Next:** Module 5 - content-based filtering (artist tags, TF-IDF) and the first
+beyond-accuracy metrics (coverage, intra-list diversity, novelty).
+
+---
+
 ## Module 3 - Non-personalised baseline & evaluation harness (2026-06-24)
 
 **Goal:** formalise the popularity baseline and grow the evaluation harness into a fair,
@@ -16,7 +60,8 @@ reusable comparison tool (the 30% grade backbone).
   `compare_models()` scores several named models on one split and returns a sorted table.
 - App method switcher enabled: three popularity strategies (plays / listeners / damped)
   are selectable, each showing its own offline Precision@K and Recall@K.
-- `scripts/evaluate_baselines.py`: writes `docs/baseline_comparison.csv`.
+- `scripts/evaluate_baselines.py`: writes the comparison table (later renamed
+  `docs/method_comparison.csv` in Module 4 as more methods were added).
 - Tests: 40 total, 94% coverage.
 
 **Baseline comparison (k=10, held-out split, seed 42, 1,884 users)**

@@ -53,6 +53,16 @@ select {
   border-radius: 8px;
 }
 
+.metric-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-top: 0.6rem;
+}
+
+.metric-row span { color: var(--muted); font-size: 0.9rem; }
+.metric-row strong { color: var(--text); margin-left: 0.2rem; }
+
 h2 { margin-top: 2rem; font-size: 1.2rem; }
 
 .recs { list-style: none; padding: 0; }

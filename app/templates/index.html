@@ -29,10 +29,14 @@
     </form>
 
     <section class="metric">
-      Offline quality of <strong>{{ selected_method }}</strong> on held-out data:
-      <strong>Precision@{{ k }} = {{ '%.4f'|format(precision) }}</strong>,
-      <strong>Recall@{{ k }} = {{ '%.4f'|format(recall) }}</strong>
-      <span class="muted">(averaged over {{ n_eval_users }} users)</span>
+      Offline quality of <strong>{{ selected_method }}</strong> on held-out data
+      <span class="muted">(averaged over {{ n_eval_users }} users)</span>:
+      <div class="metric-row">
+        <span>Precision@{{ k }} <strong>{{ '%.4f'|format(precision) }}</strong></span>
+        <span>Recall@{{ k }} <strong>{{ '%.4f'|format(recall) }}</strong></span>
+        <span>MAP@{{ k }} <strong>{{ '%.4f'|format(mean_ap) }}</strong></span>
+        <span>NDCG@{{ k }} <strong>{{ '%.4f'|format(ndcg) }}</strong></span>
+      </div>
     </section>
 
     <h2>Top {{ recommendations|length }} for user {{ selected_user }}</h2>
