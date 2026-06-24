@@ -13,8 +13,10 @@
 
     <form method="get" action="/" class="controls">
       <label for="method">Method</label>
-      <select id="method" name="method" disabled title="More methods arrive in later modules">
-        {% for m in methods %}<option>{{ m }}</option>{% endfor %}
+      <select id="method" name="method" onchange="this.form.submit()">
+        {% for m in methods %}
+          <option value="{{ m }}" {% if m == selected_method %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
       </select>
 
       <label for="user_id">User</label>
@@ -27,8 +29,9 @@
     </form>
 
     <section class="metric">
-      Offline <strong>Precision@{{ k }}</strong> on held-out data:
-      <strong>{{ '%.4f'|format(precision) }}</strong>
+      Offline quality of <strong>{{ selected_method }}</strong> on held-out data:
+      <strong>Precision@{{ k }} = {{ '%.4f'|format(precision) }}</strong>,
+      <strong>Recall@{{ k }} = {{ '%.4f'|format(recall) }}</strong>
       <span class="muted">(averaged over {{ n_eval_users }} users)</span>
     </section>
 

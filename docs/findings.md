@@ -5,6 +5,45 @@ method comparison, final remarks). Newest entries at the top.
 
 ---
 
+## Module 3 - Non-personalised baseline & evaluation harness (2026-06-24)
+
+**Goal:** formalise the popularity baseline and grow the evaluation harness into a fair,
+reusable comparison tool (the 30% grade backbone).
+
+**What was built**
+- `recall_at_k` added to `src/recsys/eval/metrics.py`.
+- `evaluate()` now reports Precision@K, Recall@K, `n_users`, and `fit_seconds`;
+  `compare_models()` scores several named models on one split and returns a sorted table.
+- App method switcher enabled: three popularity strategies (plays / listeners / damped)
+  are selectable, each showing its own offline Precision@K and Recall@K.
+- `scripts/evaluate_baselines.py`: writes `docs/baseline_comparison.csv`.
+- Tests: 40 total, 94% coverage.
+
+**Baseline comparison (k=10, held-out split, seed 42, 1,884 users)**
+
+| Strategy   | Precision@10 | Recall@10 |
+|------------|-------------:|----------:|
+| listeners  | 0.0691       | 0.0703    |
+| plays      | 0.0602       | 0.0615    |
+| damped     | 0.0430       | 0.0437    |
+
+**Why it matters**
+- "Listeners" (broad appeal) beats "plays" - total plays let a few superfans distort the
+  ranking, so counting *distinct* listeners is a better popularity signal here.
+- "Damped" deliberately sacrifices accuracy by suppressing mega-hits; we expect it to pay
+  off later on beyond-accuracy metrics (novelty / coverage), illustrating the core
+  accuracy-vs-bias trade-off.
+- **0.069 is the number to beat:** every personalised method from Module 4 onward must
+  exceed the best non-personalised baseline to justify its complexity.
+
+**Definition of done:** met. Baseline scored and wired into the app; harness reports two
+accuracy metrics; comparison reproducible via script; tests green at >= 80%.
+
+**Next:** Module 4 - collaborative filtering (item-item kNN on the implicit matrix),
+adding MAP and NDCG to the harness.
+
+---
+
 ## Module 2 - Dataset, EDA & preprocessing (2026-06-24)
 
 **Goal:** understand the data and turn it into model-ready structures (sparse matrix +

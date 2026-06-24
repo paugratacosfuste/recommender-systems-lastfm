@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from recsys.eval.metrics import precision_at_k
+from recsys.eval.metrics import precision_at_k, recall_at_k
 
 
 def test_all_relevant():
@@ -34,3 +34,27 @@ def test_fewer_than_k_recommendations_divides_by_k():
 def test_k_must_be_positive():
     with pytest.raises(ValueError):
         precision_at_k([1, 2], {1}, k=0)
+
+
+def test_recall_finds_all_relevant():
+    # Both relevant items are in the top 4 -> 2/2 = 1.0
+    assert recall_at_k([1, 2, 3, 4], {1, 3}, k=4) == 1.0
+
+
+def test_recall_is_capped_by_k():
+    # User has 4 relevant items but only k=2 slots; best case 2/4 = 0.5
+    assert recall_at_k([1, 2, 3, 4], {1, 2, 5, 6}, k=2) == pytest.approx(0.5)
+
+
+def test_recall_with_no_relevant_is_zero():
+    assert recall_at_k([1, 2, 3], set(), k=3) == 0.0
+
+
+def test_recall_partial():
+    # 1 of the user's 2 relevant items surfaced in top 3 -> 1/2
+    assert recall_at_k([1, 9, 9], {1, 4}, k=3) == pytest.approx(0.5)
+
+
+def test_recall_k_must_be_positive():
+    with pytest.raises(ValueError):
+        recall_at_k([1, 2], {1}, k=0)

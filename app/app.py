@@ -21,29 +21,30 @@ from app.service import RecommenderService  # noqa: E402
 
 app = Flask(__name__)
 
-# Build the service once at startup (loads data, fits the model).
+# Build the service once at startup (loads data, fits every method).
 service = RecommenderService()
-
-# The method switcher is a stub for Phase 0 (only the popularity baseline exists yet).
-AVAILABLE_METHODS = ["Popularity (plays)"]
 
 
 @app.route("/")
 def index() -> str:
-    """Render the recommendation screen for the selected (or first) user."""
+    """Render the recommendation screen for the selected user and method."""
     raw_user = request.args.get("user_id", "")
     selected_user = int(raw_user) if raw_user.isdigit() else service.user_ids[0]
+    selected_method = request.args.get("method", service.methods[0])
 
-    recommendations = service.recommend(selected_user)
+    recommendations = service.recommend(selected_method, selected_user)
+    metrics = service.metrics(selected_method)
     return render_template(
         "index.html",
         user_ids=service.user_ids,
         selected_user=selected_user,
         recommendations=recommendations,
-        methods=AVAILABLE_METHODS,
-        precision=service.precision_at_k,
-        k=service.k,
-        n_eval_users=service.n_eval_users,
+        methods=service.methods,
+        selected_method=selected_method,
+        precision=metrics["precision_at_k"],
+        recall=metrics["recall_at_k"],
+        k=int(metrics["k"]),
+        n_eval_users=int(metrics["n_users"]),
     )
 
 

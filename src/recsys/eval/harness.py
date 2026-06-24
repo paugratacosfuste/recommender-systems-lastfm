@@ -7,10 +7,12 @@ backbone of the project's method-comparison story (the 30% evaluation grade).
 
 from __future__ import annotations
 
+import time
+
 import pandas as pd
 
 from recsys.config import ITEM_COL, USER_COL
-from recsys.eval.metrics import precision_at_k
+from recsys.eval.metrics import precision_at_k, recall_at_k
 from recsys.models.base import BaseRecommender
 
 
@@ -20,7 +22,7 @@ def evaluate(
     test: pd.DataFrame,
     k: int = 10,
 ) -> dict[str, float]:
-    """Fit ``model`` on ``train`` and average Precision@K over test users.
+    """Fit ``model`` on ``train`` and average ranking metrics over test users.
 
     Parameters
     ----------
@@ -31,24 +33,58 @@ def evaluate(
     test : pandas.DataFrame
         Held-out interactions; relevance is defined per user from this set.
     k : int
-        Cutoff rank for the metric.
+        Cutoff rank for the metrics.
 
     Returns
     -------
     dict
-        ``{"precision_at_k": float, "k": k, "n_users": int}``.
+        ``{"precision_at_k", "recall_at_k", "k", "n_users", "fit_seconds"}``.
     """
+    start = time.perf_counter()
     model.fit(train)
+    fit_seconds = time.perf_counter() - start
+
     relevant_by_user = test.groupby(USER_COL)[ITEM_COL].apply(set).to_dict()
 
-    scores: list[float] = []
+    precisions: list[float] = []
+    recalls: list[float] = []
     for user_id, relevant in relevant_by_user.items():
         recommended = model.recommend(user_id, n=k, exclude_seen=True)
-        scores.append(precision_at_k(recommended, relevant, k))
+        precisions.append(precision_at_k(recommended, relevant, k))
+        recalls.append(recall_at_k(recommended, relevant, k))
 
-    mean_precision = sum(scores) / len(scores) if scores else 0.0
+    n = len(precisions)
     return {
-        "precision_at_k": mean_precision,
+        "precision_at_k": sum(precisions) / n if n else 0.0,
+        "recall_at_k": sum(recalls) / n if n else 0.0,
         "k": float(k),
-        "n_users": float(len(scores)),
+        "n_users": float(n),
+        "fit_seconds": fit_seconds,
     }
+
+
+def compare_models(
+    models: dict[str, BaseRecommender],
+    train: pd.DataFrame,
+    test: pd.DataFrame,
+    k: int = 10,
+) -> pd.DataFrame:
+    """Evaluate several named models on the same split and return a comparison table.
+
+    Parameters
+    ----------
+    models : dict of str -> BaseRecommender
+        Named, unfitted recommenders to compare.
+    train, test : pandas.DataFrame
+        The shared train/test split (fairness depends on this being identical).
+    k : int
+        Cutoff rank.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per model, indexed by name, sorted by Precision@K descending.
+    """
+    rows = {name: evaluate(model, train, test, k=k) for name, model in models.items()}
+    table = pd.DataFrame.from_dict(rows, orient="index")
+    return table.sort_values("precision_at_k", ascending=False)
