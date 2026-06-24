@@ -1,0 +1,22 @@
+name: recsys-music
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - pyarrow
+  - flask
+  - requests
+  - matplotlib
+  - seaborn
+  - jupyterlab
+  - pytest
+  - pytest-cov
+  - black
+  - ruff
+  - pip
+  # implicit / lightfm (library benchmarks) are added in Module 4/6 to keep the
+  # Phase 0 environment solve fast.

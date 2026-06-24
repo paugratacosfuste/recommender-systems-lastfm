@@ -1,0 +1,1 @@
+"""Flask prototype application package."""

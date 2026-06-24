@@ -1,0 +1,19 @@
+# Data: raw + processed are reproducible from scripts/download_data.py, not committed.
+data/raw/
+data/processed/
+# The tiny test fixture in data/sample/ IS committed (negated below).
+!data/sample/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Env / OS
+.env
+.DS_Store

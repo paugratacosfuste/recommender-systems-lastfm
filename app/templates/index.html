@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Music Recommender - Prototype</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <h1>Music Recommender</h1>
+    <p class="subtitle">Last.fm HetRec 2011 - Phase 0 prototype</p>
+
+    <form method="get" action="/" class="controls">
+      <label for="method">Method</label>
+      <select id="method" name="method" disabled title="More methods arrive in later modules">
+        {% for m in methods %}<option>{{ m }}</option>{% endfor %}
+      </select>
+
+      <label for="user_id">User</label>
+      <select id="user_id" name="user_id" onchange="this.form.submit()">
+        {% for uid in user_ids %}
+          <option value="{{ uid }}" {% if uid == selected_user %}selected{% endif %}>{{ uid }}</option>
+        {% endfor %}
+      </select>
+      <noscript><button type="submit">Show</button></noscript>
+    </form>
+
+    <section class="metric">
+      Offline <strong>Precision@{{ k }}</strong> on held-out data:
+      <strong>{{ '%.4f'|format(precision) }}</strong>
+      <span class="muted">(averaged over {{ n_eval_users }} users)</span>
+    </section>
+
+    <h2>Top {{ recommendations|length }} for user {{ selected_user }}</h2>
+    <ol class="recs">
+      {% for rec in recommendations %}
+        <li><span class="rank">{{ loop.index }}</span> {{ rec.name }}
+          <span class="muted">(artist {{ rec.artist_id }})</span></li>
+      {% else %}
+        <li class="muted">No recommendations.</li>
+      {% endfor %}
+    </ol>
+  </main>
+</body>
+</html>
