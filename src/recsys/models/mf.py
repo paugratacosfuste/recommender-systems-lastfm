@@ -86,6 +86,9 @@ class ImplicitALS(BaseRecommender):
         iterations: int = 15,
         seed: int = DEFAULT_SEED,
     ) -> None:
+        # Defaults chosen via a validation-split grid search (scripts/tune_als.py):
+        # 96 factors / reg 0.01 won by ~2% on validation but cost ~2x the fit time, so
+        # 64 / 0.05 is kept as the accuracy-per-second sweet spot.
         self.factors = factors
         self.regularization = regularization
         self.alpha = alpha

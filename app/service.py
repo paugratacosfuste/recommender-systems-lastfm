@@ -20,6 +20,7 @@ from recsys.config import (
     TAGS_FILE,
     USER_ARTISTS_FILE,
     USER_COL,
+    USER_FRIENDS_FILE,
     USER_TAGGED_ARTISTS_FILE,
     WEIGHT_COL,
 )
@@ -27,6 +28,7 @@ from recsys.data.loader import (
     load_artists,
     load_tags,
     load_user_artists,
+    load_user_friends,
     load_user_tagged_artists,
 )
 from recsys.data.split import leave_n_out_split
@@ -37,6 +39,7 @@ from recsys.models.cf import ItemKNNRecommender, UserKNNRecommender
 from recsys.models.content import ContentBasedRecommender, build_artist_tag_profiles
 from recsys.models.mf import ImplicitALS
 from recsys.models.popularity import PopularityRecommender
+from recsys.models.social import SocialRecommender
 
 # One-line explanation of each method, shown in the UI.
 METHOD_DESCRIPTIONS = {
@@ -45,6 +48,7 @@ METHOD_DESCRIPTIONS = {
     "then matches yours to artists'.",
     "User-user CF": "Artists played by other users whose taste overlaps yours.",
     "Content-based": "Artists whose tags (genres/moods) match your listening profile.",
+    "Social (friends)": "Artists your friends listen to, using the friendship graph.",
     "Popularity (listeners)": "Most distinct listeners - same list for everyone.",
     "Popularity (plays)": "Most total plays - same list for everyone.",
     "Popularity (damped)": "Popular artists with mega-hits damped - same for everyone.",
@@ -83,6 +87,7 @@ class RecommenderService:
         self.top_n = top_n
         interactions = load_user_artists(RAW_DIR / USER_ARTISTS_FILE)
         tagged = load_user_tagged_artists(RAW_DIR / USER_TAGGED_ARTISTS_FILE)
+        friends = load_user_friends(RAW_DIR / USER_FRIENDS_FILE)
         artists = load_artists(RAW_DIR / ARTISTS_FILE)
         tags = load_tags(RAW_DIR / TAGS_FILE)
         self._artist_name = dict(zip(artists[ITEM_COL], artists["name"]))
@@ -106,6 +111,7 @@ class RecommenderService:
             "Matrix factorisation (ALS)": ImplicitALS,
             "User-user CF": UserKNNRecommender,
             "Content-based": lambda: ContentBasedRecommender(tagged),
+            "Social (friends)": lambda: SocialRecommender(friends),
             "Popularity (listeners)": lambda: PopularityRecommender("listeners"),
             "Popularity (plays)": lambda: PopularityRecommender("plays"),
             "Popularity (damped)": lambda: PopularityRecommender("damped"),

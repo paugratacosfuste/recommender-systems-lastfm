@@ -61,9 +61,11 @@ comparison.
 - Content-based - TF-IDF over artist tags; matches your tag profile; handles cold-start.
 - Matrix factorisation (implicit ALS) - hand-implemented Hu/Koren/Volinsky; learns latent
   taste factors.
+- Social - recommends what your friends listen to, using the friendship graph.
 All core logic hand-implemented; numpy/scipy/sklearn for speed.
 
-**7. How we evaluate (the 30%).** Same split, same harness, three metric families:
+**7. How we evaluate (the 30%).** Same split, same harness, three metric families, and
+every result averaged over 5 random splits (std 0.001-0.003, so rankings are stable):
 - Accuracy: Precision@10, Recall@10, MAP@10, NDCG@10.
 - Beyond-accuracy: catalogue coverage, intra-list diversity, novelty, popularity bias
   (mean recommended popularity + exposure Gini).
@@ -92,41 +94,51 @@ Caveat to show honesty: even "personalised" user-user CF leans on crowd-pleasers
 memory-based CF trains in ~0.02s but stores a big item-item similarity matrix; ALS pays ~6.3s
 training but serves in ~0.2ms from compact factor matrices. No universal winner.
 
-**13. Full comparison table.** Render this exact table (k=10, held-out split, 1,884 users):
+**13. Full comparison table.** Render this exact table (k=10, mean over 5 splits, ~1,884
+users):
 
 | Method | P@10 | NDCG | Coverage | Diversity | Novelty | PopBias | fit s |
 |---|---|---|---|---|---|---|---|
-| Item-item CF | 0.175 | 0.217 | 0.156 | 0.616 | 4.75 | 0.084 | 0.02 |
-| ALS (MF) | 0.134 | 0.150 | 0.103 | 0.745 | 4.91 | 0.053 | 6.27 |
-| User-user CF | 0.129 | 0.160 | 0.018 | 0.619 | 2.98 | 0.140 | 0.03 |
-| Content-based | 0.099 | 0.114 | 0.143 | 0.338 | 6.57 | 0.034 | 0.04 |
-| Pop (listeners) | 0.069 | 0.080 | 0.002 | 0.627 | 2.44 | 0.186 | 0.01 |
-| Pop (plays) | 0.060 | 0.065 | 0.001 | 0.676 | 2.68 | 0.165 | 0.01 |
-| Pop (damped) | 0.043 | 0.044 | 0.001 | 0.765 | 3.44 | 0.120 | 0.01 |
+| Item-item CF | 0.177 | 0.220 | 0.158 | 0.616 | 4.75 | 0.084 | 0.02 |
+| ALS (MF) | 0.134 | 0.150 | 0.102 | 0.746 | 4.92 | 0.053 | 6.3 |
+| User-user CF | 0.131 | 0.162 | 0.019 | 0.620 | 2.98 | 0.140 | 0.03 |
+| Social (friends) | 0.123 | 0.153 | 0.143 | 0.712 | 4.84 | 0.078 | 0.03 |
+| Content-based | 0.100 | 0.117 | 0.145 | 0.337 | 6.59 | 0.034 | 0.04 |
+| Pop (listeners) | 0.071 | 0.082 | 0.002 | 0.632 | 2.45 | 0.186 | 0.01 |
+| Pop (plays) | 0.061 | 0.066 | 0.001 | 0.698 | 2.69 | 0.165 | 0.01 |
+| Pop (damped) | 0.045 | 0.046 | 0.001 | 0.753 | 3.36 | 0.120 | 0.01 |
 
 Bold the best cell in each column.
+
+**13b. Cold-start.** Of 2,211 artists with zero training plays, collaborative filtering,
+ALS, social, and popularity can recommend NONE (not in their item space); content-based can
+recommend 1,227 of them - its defining advantage. Conversely, this dataset has almost no
+cold users (75% have exactly 40 training interactions), so accuracy is flat across user
+history - itself an honest dataset finding.
 
 **14. Technical challenges.** Extreme sparsity (99.7%); implicit feedback has no negatives;
 keeping comparison fair (one split, one harness, interchangeable models); hand-implementing
 ALS correctly (validated with a closed-form unit test + a synthetic two-cluster sanity test);
 the diversity metric only meaningful in tag space; balancing accuracy against bias.
 
-**15. Honest limitations.** State them plainly (this was explicitly requested): random (not
-temporal) split can leak future listens; single split / one seed, so no significance testing;
-ALS only coarsely tuned and capped for runtime (likely under-fit), and not cross-checked
-against the `implicit` library; accuracy rewards re-discovering already-played artists, not
-true discovery, and is popularity-biased by construction; cold-start is argued for
-content-based but not measured; diversity is tag-space only and exposure Gini is near-
-saturated for all methods; the dataset is small and dense (top ~50 artists per user), which
-flatters the popularity baseline; the friendship graph is unused; the UI is a prototype, not
+**15. Honest limitations.** State them plainly (this was explicitly requested). First, what
+was *fixed* rather than excused: averaged over 5 seeds (not one); ALS tuned on a validation
+split; cold-start measured; the friendship graph turned into a working method. What genuinely
+*remains* (mostly inherent): no temporal split is possible because the interaction file has
+no timestamps (dataset constraint, not a choice); accuracy rewards re-discovering
+already-played artists, not true discovery - inherent to offline evaluation, needs an online
+test to fix; ALS validated by unit tests and a synthetic check, not the `implicit` library;
+diversity is tag-space only and exposure Gini is near-saturated for all methods; the dataset
+is small and dense (top ~50 artists/user), which flatters the popularity baseline and leaves
+almost no cold users; scalability is described at this scale only; the UI is a prototype, not
 user-tested.
 
 **16. Final remarks.** No single model wins on all axes - the right system is a **portfolio**:
 ship item-item CF as the default (best accuracy + coverage, trivial training), add
-content-based for cold-start and novelty, keep popularity as the cold-user fallback. Key
-lesson: accuracy is necessary but not sufficient; diversity, novelty, coverage, bias, and
-scalability all matter. Next steps: hybrid blending, learning-to-rank, temporal split,
-`implicit`-library cross-check.
+content-based for cold-start and novelty, use the social recommender to widen coverage where
+a friendship graph exists, and keep popularity as the cold-user fallback. Key lesson:
+accuracy is necessary but not sufficient; diversity, novelty, coverage, bias, and scalability
+all matter. Next steps: hybrid blending, learning-to-rank, `implicit`-library cross-check.
 
 **17. Closing.** "Accuracy is necessary. It is not sufficient." + thank-you / Q&A.
 

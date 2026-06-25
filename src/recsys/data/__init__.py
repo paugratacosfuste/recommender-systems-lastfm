@@ -5,6 +5,7 @@ from recsys.data.loader import (
     load_artists,
     load_tags,
     load_user_artists,
+    load_user_friends,
     load_user_tagged_artists,
 )
 from recsys.data.preprocess import (
@@ -21,6 +22,7 @@ __all__ = [
     "load_user_artists",
     "load_tags",
     "load_user_tagged_artists",
+    "load_user_friends",
     "leave_n_out_split",
     "IndexMapping",
     "build_index_mapping",

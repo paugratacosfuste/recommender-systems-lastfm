@@ -5,6 +5,50 @@ method comparison, final remarks). Newest entries at the top.
 
 ---
 
+## Rigor pass - fixing fixable limitations (2026-06-25)
+
+After review feedback ("include your honest limitations"), several limitations that were
+genuinely *fixable* were fixed rather than just disclaimed.
+
+**What was added**
+- **Social recommender** (`src/recsys/models/social.py`) using the previously-unused
+  friendship graph: scores artists by friends' (log) listening. Added to app + benchmark.
+- **Multi-seed evaluation** - `scripts/evaluate_baselines.py` now averages over 5 splits and
+  writes mean + std (`method_comparison.csv`, `method_comparison_std.csv`).
+- **Proper ALS tuning** - `scripts/tune_als.py` grid-searches on a validation slice carved
+  from train; confirmed the shipped config (64 factors, reg 0.05) is within ~2% of the best.
+- **Cold-start experiment** - `scripts/cold_start.py`: cold-user buckets (figure
+  `cold_start.png`) + cold-item reach.
+- Tests: 78 total, 94% coverage.
+
+**New results (mean over 5 seeds, std 0.001-0.003)**
+
+| Method | P@10 | NDCG | Coverage | Diversity | Novelty |
+|---|---|---|---|---|---|
+| Item-item CF | 0.177 | 0.220 | 0.158 | 0.616 | 4.75 |
+| ALS (MF) | 0.134 | 0.150 | 0.102 | 0.746 | 4.92 |
+| User-user CF | 0.131 | 0.162 | 0.019 | 0.620 | 2.98 |
+| **Social (friends)** | 0.123 | 0.153 | 0.143 | 0.712 | 4.84 |
+| Content-based | 0.100 | 0.117 | 0.145 | 0.337 | 6.59 |
+| Pop (listeners) | 0.071 | 0.082 | 0.0015 | 0.632 | 2.45 |
+
+**New findings**
+- **Social recommender** nearly matches user-user CF accuracy (0.123 vs 0.131) with ~7.5x
+  the coverage (0.143 vs 0.019) and much higher diversity - friends are almost as predictive
+  as statistical neighbours, and far broader. A strong, cheap addition.
+- **Multi-seed** std is tiny (0.001-0.003): the rankings are robust, not a single-split fluke.
+- **ALS tuning**: validation winner (96 factors / reg 0.01) beat the default by ~2% at ~2x
+  fit time, so the default was kept - a justified accuracy/latency choice, not under-tuning.
+- **Cold-start**: of 2,211 zero-play artists, CF/ALS/social/popularity reach 0, content-based
+  reaches 1,227 (its quantified advantage). The dataset has almost no cold *users* (75% have
+  exactly 40 training interactions), so cold-user accuracy is flat - itself a dataset finding.
+
+**Why the temporal split is a real (not lazy) limitation:** `user_artists.dat` has no
+timestamps, so a time-based split is impossible on the listening data; this is now stated as
+a dataset constraint rather than an omission.
+
+---
+
 ## Module 7 - Evaluation consolidation & critical analysis (2026-06-25)
 
 **Goal:** one fair comparison of all six methods on the same split, the figures for the
@@ -71,26 +115,23 @@ coverage, trivial training), blend in **content-based** for cold-start and novel
 **popularity** as the cold-user fallback. No single model is best on all axes - the right
 system is a portfolio.
 
-### Honest limitations (stated explicitly)
+### Honest limitations
 
-- **Random, not temporal, split** - can leak later listens into training; a time-based split
-  would be more realistic and likely lower scores.
-- **Single split, one seed** - no cross-validation, confidence intervals, or significance
-  testing, so small gaps (e.g. user-user CF vs ALS) are not statistically validated.
-- **Light tuning** - only ALS was tuned, coarsely, with factors/iterations capped for
-  runtime (likely under-fit). The planned `implicit`-library cross-check of the hand-written
-  ALS was not done; it is validated only by unit tests.
-- **Accuracy rewards re-discovery, not discovery** - relevance = held-out artists the user
-  already played, so accuracy is structurally popularity-biased; beyond-accuracy softens but
-  does not remove this.
-- **Cold-start argued, not measured** - content-based's advantage is structural, never
-  quantified with a held-out new-user/new-artist experiment.
-- **Beyond-accuracy blind spots** - diversity is tag-space only (untagged artists skipped),
-  novelty derives from train popularity, exposure Gini is near-saturated for all methods.
-- **Small, dense dataset** - HetRec keeps ~top-50 artists per user, making the popularity
-  baseline unusually strong; generalisation to larger/sparser catalogues is untested.
-- **Scalability is descriptive** - costs reported at this scale only, not stress-tested.
-- **Unused signal** - the friendship graph is not exploited.
+> Reframed after the rigor pass (see the newer entry at the top of this log). Single-seed,
+> light-tuning, cold-start, and unused-friendship were *fixed*, not just disclaimed. The
+> remaining limitations are genuinely inherent:
+- **No temporal split is possible** - `user_artists.dat` has no timestamps (aggregate play
+  counts), so a time-based split cannot be built; the random hold-out likely overstates
+  real-world performance. Dataset constraint, not a choice.
+- **Accuracy rewards re-discovery, not discovery** - inherent to offline evaluation;
+  measuring true discovery needs an online A/B test or user study.
+- **ALS validated by tests, not the `implicit` library** - grid-searched on a validation
+  split and checked against a closed-form + synthetic case, but not cross-checked vs a lib.
+- **Beyond-accuracy blind spots** - diversity tag-space only, novelty from train popularity,
+  exposure Gini near-saturated for all methods.
+- **Small, dense dataset** - HetRec ~top-50 artists/user; flatters popularity, and (cold-start
+  analysis confirmed) leaves almost no genuine cold users.
+- **Scalability is descriptive** - costs at this scale only, not stress-tested.
 - **Prototype UX** - functional, not user-tested.
 
 **Definition of done:** met. Unified comparison + figures regenerated from one script /

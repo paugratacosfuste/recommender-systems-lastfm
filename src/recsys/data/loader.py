@@ -92,6 +92,21 @@ def load_user_tagged_artists(path: Path | str) -> pd.DataFrame:
     return df[[USER_COL, ITEM_COL, "tag_id"]].reset_index(drop=True)
 
 
+def load_user_friends(path: Path | str) -> pd.DataFrame:
+    """Load the (user, friend) social graph edges.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``[user_id, friend_id]``, one row per directed friendship edge.
+    """
+    df = _read_tsv(path)
+    df = df.rename(columns={"userID": USER_COL, "friendID": "friend_id"})
+    if USER_COL not in df.columns or "friend_id" not in df.columns:
+        raise ValueError(f"user_friends is missing columns; got {list(df.columns)}")
+    return df[[USER_COL, "friend_id"]].reset_index(drop=True)
+
+
 def load_artists(path: Path | str) -> pd.DataFrame:
     """Load the artist catalogue (id -> name).
 
