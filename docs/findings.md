@@ -5,6 +5,57 @@ method comparison, final remarks). Newest entries at the top.
 
 ---
 
+## Module 6 - Matrix factorisation (implicit ALS) (2026-06-25)
+
+**Goal:** hand-implement implicit ALS (Hu/Koren/Volinsky 2008) and add latency/scalability
+to the comparison.
+
+**What was built**
+- `src/recsys/models/mf.py`: `solve_factors` (one closed-form ALS half-step using the
+  `YtY + Yt(Cu-I)Y` trick) and `ImplicitALS` (confidence `c=1+alpha*log(1+plays)`,
+  alternating ridge-regression updates, dot-product scoring).
+- `evaluate()` now also reports `recommend_ms` (mean per-user serving latency) and supports
+  `refit=False` so the app does not fit each model twice.
+- ALS added to the app switcher and `scripts/evaluate_baselines.py`.
+- Tuning (held-out, seed 42): best around factors=96, reg=0.05, alpha=40 (P@10 ~0.143);
+  shipped default factors=64, reg=0.05, alpha=40 for a faster fit.
+- Tests: 70 total, 94% coverage (incl. a closed-form check of `solve_factors`).
+
+**Full comparison (k=10, held-out split, seed 42, 1,884 users)**
+
+| Method                | P@10   | NDCG@10 | Coverage | Diversity | Novelty | fit (s) | rec (ms) |
+|-----------------------|-------:|--------:|---------:|----------:|--------:|--------:|---------:|
+| Item-item CF          | 0.1749 | 0.2174  | 0.156    | 0.616     | 4.75    | 0.02    | 0.24     |
+| **Matrix fact. (ALS)**| 0.1344 | 0.1502  | 0.103    | 0.745     | 4.91    | 6.39    | 0.19     |
+| User-user CF          | 0.1292 | 0.1598  | 0.018    | 0.619     | 2.98    | 0.03    | 0.26     |
+| Content-based         | 0.0994 | 0.1144  | 0.143    | 0.338     | 6.57    | 0.04    | 0.48     |
+| Popularity (listeners)| 0.0691 | 0.0798  | 0.0015   | 0.627     | 2.44    | 0.01    | 0.17     |
+| Popularity (plays)    | 0.0602 | 0.0653  | 0.0014   | 0.676     | 2.68    | 0.01    | 0.18     |
+| Popularity (damped)   | 0.0430 | 0.0441  | 0.0012   | 0.765     | 3.44    | 0.01    | 0.18     |
+
+**Why it matters (scalability + the "fancier isn't always better" lesson)**
+- On this dataset the well-tuned **memory-based item-item CF beats ALS on accuracy**
+  (0.175 vs 0.134). A useful, honest result: the more sophisticated model is not
+  automatically the winner, especially on a small, dense top-50-per-user dataset.
+- But ALS produces the **most diverse lists among the accurate methods** (0.745, well above
+  item-CF's 0.616) with similar novelty - latent factors generalise taste rather than echo
+  exact co-listens.
+- **Scalability trade-off (deck slide):** ALS pays ~6.4s to train but serves in 0.19ms from
+  a tiny factor matrix; memory-based CF trains instantly but stores an item-item similarity
+  matrix and is harder to scale to huge catalogues. Different cost profiles, not a single
+  winner.
+- Correctness of the hand-implementation is unit-tested against the closed-form ALS update
+  and a synthetic two-cluster dataset (a known-answer sanity check) rather than only the
+  library; the `implicit` library benchmark is a possible future cross-check.
+
+**Definition of done:** met. ALS in app + switcher, tuned, full accuracy + beyond-accuracy +
+latency reported; tests green at >= 80%.
+
+**Next:** Module 7 - consolidate the evaluation (one regenerated comparison + figures and a
+written critical analysis) and a final UX polish pass.
+
+---
+
 ## Module 5 - Content-based filtering & beyond-accuracy metrics (2026-06-25)
 
 **Goal:** add a content-based method (artist tags) and the beyond-accuracy metrics that

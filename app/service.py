@@ -30,6 +30,7 @@ from recsys.eval.harness import evaluate
 from recsys.models.base import BaseRecommender
 from recsys.models.cf import ItemKNNRecommender, UserKNNRecommender
 from recsys.models.content import ContentBasedRecommender, build_artist_tag_profiles
+from recsys.models.mf import ImplicitALS
 from recsys.models.popularity import PopularityRecommender
 
 
@@ -66,6 +67,7 @@ class RecommenderService:
         # Personalised methods first (they are the better default).
         factories = {
             "Item-item CF": ItemKNNRecommender,
+            "Matrix factorisation (ALS)": ImplicitALS,
             "User-user CF": UserKNNRecommender,
             "Content-based": lambda: ContentBasedRecommender(tagged),
             "Popularity (listeners)": lambda: PopularityRecommender("listeners"),
@@ -77,9 +79,11 @@ class RecommenderService:
         self._models: dict[str, BaseRecommender] = {}
         self._metrics: dict[str, dict[str, float]] = {}
         for label, factory in factories.items():
-            self._models[label] = factory().fit(self._train)
+            model = factory().fit(self._train)
+            self._models[label] = model
+            # Reuse the fitted model for scoring (refit=False) to avoid fitting twice.
             self._metrics[label] = evaluate(
-                factory(), self._train, self._test, k=top_n, beyond=beyond
+                model, self._train, self._test, k=top_n, beyond=beyond, refit=False
             )
 
     def _resolve(self, method: str | None) -> str:

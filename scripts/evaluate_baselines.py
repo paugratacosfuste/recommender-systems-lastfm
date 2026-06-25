@@ -30,6 +30,7 @@ from recsys.eval.beyond_accuracy import BeyondAccuracyInputs, build_item_popular
 from recsys.eval.harness import compare_models
 from recsys.models.cf import ItemKNNRecommender, UserKNNRecommender
 from recsys.models.content import ContentBasedRecommender, build_artist_tag_profiles
+from recsys.models.mf import ImplicitALS
 from recsys.models.popularity import PopularityRecommender
 
 DOCS_DIR = RAW_DIR.parents[1] / "docs"
@@ -43,6 +44,7 @@ METRIC_COLS = [
     "diversity",
     "novelty",
     "fit_seconds",
+    "recommend_ms",
 ]
 
 
@@ -68,6 +70,7 @@ def main(k: int = DEFAULT_TOP_N) -> None:
         "item_knn": ItemKNNRecommender(),
         "user_knn": UserKNNRecommender(),
         "content_based": ContentBasedRecommender(tagged),
+        "als_mf": ImplicitALS(),
     }
     table = compare_models(models, train, test, k=k, beyond=beyond)
 

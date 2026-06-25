@@ -86,8 +86,14 @@ def _top_n_item_ids(
     n: int,
     seen_idx: np.ndarray,
     exclude_seen: bool,
+    positive_only: bool = True,
 ) -> list[int]:
-    """Pick the n highest-scoring, positive, unseen items and map to artist ids."""
+    """Pick the n highest-scoring unseen items and map them to artist ids.
+
+    With ``positive_only`` (default), items with non-positive scores are dropped - right
+    for similarity/count scores where 0 means "no signal". Matrix factorisation scores can
+    legitimately be negative, so it passes ``positive_only=False`` to keep the top-n.
+    """
     scores = scores.copy()
     if exclude_seen and seen_idx.size:
         scores[seen_idx] = -np.inf
@@ -95,7 +101,8 @@ def _top_n_item_ids(
     n_candidates = min(n, scores.size)
     top = np.argpartition(scores, -n_candidates)[-n_candidates:]
     top = top[np.argsort(scores[top])[::-1]]
-    return [int(mapping.item_ids[i]) for i in top if scores[i] > 0]
+    threshold = -np.inf if not positive_only else 0.0
+    return [int(mapping.item_ids[i]) for i in top if scores[i] > threshold]
 
 
 class _MatrixCFRecommender(BaseRecommender):

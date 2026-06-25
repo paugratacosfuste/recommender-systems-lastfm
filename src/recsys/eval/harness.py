@@ -33,6 +33,7 @@ def evaluate(
     test: pd.DataFrame,
     k: int = 10,
     beyond: BeyondAccuracyInputs | None = None,
+    refit: bool = True,
 ) -> dict[str, float]:
     """Fit ``model`` on ``train`` and average ranking metrics over test users.
 
@@ -48,6 +49,9 @@ def evaluate(
         Cutoff rank for the metrics.
     beyond : BeyondAccuracyInputs, optional
         If given, also computes coverage, intra-list diversity, and novelty.
+    refit : bool
+        If True (default), fit the model on ``train`` first. Pass False to evaluate an
+        already-fitted model (e.g. to avoid fitting twice at app startup).
 
     Returns
     -------
@@ -57,7 +61,8 @@ def evaluate(
         ``coverage``, ``diversity``, ``novelty``.
     """
     start = time.perf_counter()
-    model.fit(train)
+    if refit:
+        model.fit(train)
     fit_seconds = time.perf_counter() - start
 
     relevant_by_user = test.groupby(USER_COL)[ITEM_COL].apply(set).to_dict()
@@ -69,9 +74,12 @@ def evaluate(
     diversities: list[float] = []
     novelties: list[float] = []
     all_recommended: list[list[int]] = []
+    recommend_seconds = 0.0
 
     for user_id, relevant in relevant_by_user.items():
+        rec_start = time.perf_counter()
         recommended = model.recommend(user_id, n=k, exclude_seen=True)
+        recommend_seconds += time.perf_counter() - rec_start
         precisions.append(precision_at_k(recommended, relevant, k))
         recalls.append(recall_at_k(recommended, relevant, k))
         average_precisions.append(average_precision_at_k(recommended, relevant, k))
@@ -96,6 +104,7 @@ def evaluate(
         "k": float(k),
         "n_users": float(n),
         "fit_seconds": fit_seconds,
+        "recommend_ms": (recommend_seconds / n * 1000.0) if n else 0.0,
     }
     if beyond is not None:
         result["coverage"] = catalogue_coverage(all_recommended, beyond.n_catalogue)
