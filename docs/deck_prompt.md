@@ -21,12 +21,12 @@ the figures and tables given here.
 
 ## Project in one line
 A music recommender prototype on the **Last.fm HetRec 2011** implicit-feedback dataset, built
-module by module, comparing six methods on the same data across accuracy AND beyond-accuracy
+module by module, comparing eight methods on the same data across accuracy AND beyond-accuracy
 metrics.
 
 ## Slides
 
-**1. Title.** "Music Recommender: Six Methods, One Honest Comparison". Subtitle: Last.fm
+**1. Title.** "Music Recommender: Eight Methods, One Honest Comparison". Subtitle: Last.fm
 HetRec 2011, implicit feedback. Course / author / date placeholder.
 
 **2. The problem & the data.** Implicit feedback only (play counts, no star ratings). Last.fm
@@ -54,7 +54,7 @@ dominating. Per-user leave-out split so every test user is also in training. One
 train/test split and one evaluation harness reused by every method - the backbone of a fair
 comparison.
 
-**6. The six methods (overview).** One line each:
+**6. The eight methods (overview).** One line each (popularity covers three variants):
 - Popularity (plays / listeners / damped) - non-personalised baseline / floor.
 - Item-item CF - artists co-listened with yours (hand-rolled sparse cosine).
 - User-user CF - artists from users with similar taste.

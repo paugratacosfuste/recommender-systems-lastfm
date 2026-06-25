@@ -51,7 +51,7 @@ a dataset constraint rather than an omission.
 
 ## Module 7 - Evaluation consolidation & critical analysis (2026-06-25)
 
-**Goal:** one fair comparison of all six methods on the same split, the figures for the
+**Goal:** one fair comparison of all methods on the same split, the figures for the
 deck, popularity-bias metrics, a UX polish pass, and the written synthesis (the 30% grade).
 
 **What was built**
@@ -230,7 +230,7 @@ make the "accuracy is not enough" argument measurable.
   can still score high; report it alongside coverage/novelty, not alone.
 
 **Definition of done:** met. Content model in app + switcher; accuracy and beyond-accuracy
-reported and contrasted across all six methods; tests green at >= 80%.
+reported and contrasted across all methods; tests green at >= 80%.
 
 **Next:** Module 6 - matrix factorisation (implicit ALS, hand-implemented), adding
 latency / scalability to the comparison.

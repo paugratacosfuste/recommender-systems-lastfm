@@ -193,7 +193,7 @@ def build() -> None:
     # Title block
     story.append(Spacer(1, 3 * cm))
     story.append(Paragraph("Music Recommender Systems", TITLE))
-    story.append(Paragraph("Six Methods, One Honest Comparison", TITLE))
+    story.append(Paragraph("Eight Methods, One Honest Comparison", TITLE))
     story.append(Spacer(1, 0.4 * cm))
     story.append(
         Paragraph(
@@ -207,7 +207,7 @@ def build() -> None:
     h1("1. Executive summary")
     p(
         "This project builds a music recommender prototype on the Last.fm HetRec 2011 "
-        "implicit-feedback dataset and compares seven methods - three non-personalised "
+        "implicit-feedback dataset and compares eight methods - three non-personalised "
         "popularity baselines, item-item and user-user collaborative filtering, content-based "
         "filtering, matrix factorisation, and a friendship-based social recommender - using "
         "both accuracy and beyond-accuracy metrics, averaged over five random splits. The "
@@ -231,8 +231,9 @@ def build() -> None:
         [
             "<b>Scale:</b> 1,892 users x 17,632 artists, 92,834 interactions.",
             "<b>Sparsity:</b> 99.72% of the user-artist matrix is empty.",
-            "<b>Side data:</b> 11,946 tags with 186,479 (user, artist, tag) assignments, and a "
-            "user friendship graph (unused here, a possible extension).",
+            "<b>Side data:</b> 11,946 tags with 186,479 (user, artist, tag) assignments "
+            "(used by content-based filtering), and a 25,434-edge user friendship graph "
+            "(used by the social recommender).",
         ]
     )
 
@@ -289,7 +290,7 @@ def build() -> None:
         "vote of confidence, sub-linear in the count so that a few superfans cannot dominate."
     )
 
-    h1("5. The six methods and their reasoning")
+    h1("5. The eight methods and their reasoning")
     h2("5.1 Popularity baselines (non-personalised)")
     p(
         "Three definitions of popular - total plays, distinct listeners, and a damped variant "
@@ -330,7 +331,7 @@ def build() -> None:
     )
     h2("5.5 Social recommender (friendship graph)")
     p(
-        "The dataset's user friendship graph is otherwise unused, so a social recommender was "
+        "No other method uses the dataset's friendship graph, so a social recommender was "
         "added: a user's score for an artist is the log-scaled amount their friends play it. "
         "Structurally it is user-user collaborative filtering with the neighbour set fixed to "
         "declared friends rather than taste-similar users - a useful contrast, since social "
