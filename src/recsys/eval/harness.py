@@ -16,7 +16,9 @@ from recsys.eval.beyond_accuracy import (
     BeyondAccuracyInputs,
     catalogue_coverage,
     intra_list_diversity,
+    mean_recommended_popularity,
     novelty,
+    recommendation_exposure_gini,
 )
 from recsys.eval.metrics import (
     average_precision_at_k,
@@ -110,6 +112,12 @@ def evaluate(
         result["coverage"] = catalogue_coverage(all_recommended, beyond.n_catalogue)
         result["diversity"] = mean(diversities)
         result["novelty"] = mean(novelties)
+        result["popularity_bias"] = mean_recommended_popularity(
+            all_recommended, beyond.popularity
+        )
+        result["exposure_gini"] = recommendation_exposure_gini(
+            all_recommended, beyond.n_catalogue
+        )
     return result
 
 

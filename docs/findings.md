@@ -5,6 +5,77 @@ method comparison, final remarks). Newest entries at the top.
 
 ---
 
+## Module 7 - Evaluation consolidation & critical analysis (2026-06-25)
+
+**Goal:** one fair comparison of all six methods on the same split, the figures for the
+deck, popularity-bias metrics, a UX polish pass, and the written synthesis (the 30% grade).
+
+**What was built**
+- Popularity-bias metrics: `mean_recommended_popularity` and `recommendation_exposure_gini`
+  (in `eval/beyond_accuracy.py`); `evaluate()` now reports `popularity_bias` and
+  `exposure_gini`.
+- `notebooks/02_evaluation.ipynb` (executed): unified comparison table + four figures
+  (`eval_accuracy`, `eval_beyond_accuracy`, `eval_tradeoff`, `eval_scalability_bias`).
+- UX polish: the app shows the selected user's actual top artists (with tags), each
+  recommendation's tags, and a one-line description of the active method.
+- Tests: 75 total, 94% coverage.
+
+**Final comparison (k=10, held-out split, seed 42, 1,884 users)**
+
+| Method        | P@10  | NDCG  | Cov.  | Div.  | Nov. | PopBias | ExpGini | fit s | rec ms |
+|---------------|------:|------:|------:|------:|-----:|--------:|--------:|------:|-------:|
+| Item-item CF  |0.1749 |0.2174 |0.156  |0.616  |4.75  |0.084    |0.969    |0.02   |0.24    |
+| ALS (MF)      |0.1344 |0.1502 |0.103  |0.745  |4.91  |0.053    |0.967    |6.27   |0.20    |
+| User-user CF  |0.1292 |0.1598 |0.018  |0.619  |2.98  |0.140    |0.997    |0.03   |0.26    |
+| Content-based |0.0994 |0.1144 |0.143  |0.338  |6.57  |0.034    |0.961    |0.04   |0.49    |
+| Pop listeners |0.0691 |0.0798 |0.0015 |0.627  |2.44  |0.186    |0.999    |0.01   |0.17    |
+| Pop plays     |0.0602 |0.0653 |0.0014 |0.676  |2.68  |0.165    |0.999    |0.01   |0.18    |
+| Pop damped    |0.0430 |0.0441 |0.0012 |0.765  |3.44  |0.120    |0.999    |0.01   |0.18    |
+
+### Critical analysis (deck narrative)
+
+**1. Personalisation works.** Every personalised method beats every popularity baseline on
+accuracy; item-item CF (P@10 0.175) is ~2.5x the best baseline (0.069). On a small, dense
+dataset (each user ~50 artists) the simple neighbourhood method is the strongest - the more
+complex ALS does not win on accuracy, a useful reminder that sophistication is not free
+value.
+
+**2. Accuracy is not enough - and the metrics prove it.** There is no method that wins every
+objective:
+- Item-item CF: best accuracy and broad coverage, but middling novelty.
+- ALS: most *diverse* of the accurate methods (0.745) and low popularity bias (0.053) -
+  latent factors generalise taste rather than echo exact co-listens.
+- Content-based: most *novel* (6.57) and least popularity-biased (0.034), but the *least
+  diverse* lists (0.338) - tag-similar picks form a filter bubble.
+- Popularity: decent accuracy floor, but ~0.001 coverage and the highest popularity bias -
+  literally the same handful of artists for all 1,884 users.
+
+**3. Popularity bias, quantified two ways.** `popularity_bias` (mean popularity of
+recommended artists) ranges from 0.186 (popularity-listeners) down to 0.034 (content-based);
+exposure Gini is ~0.999 for popularity vs ~0.96 for content. Note user-user CF is sneakily
+biased (0.140, Gini 0.997): "personalised" does not guarantee "fair" - it leans on
+crowd-pleasers. A caveat to report honestly: exposure Gini is high for *all* methods because
+10 slots x 1,884 users can only ever touch a fraction of 17,632 artists; read it as a
+*relative* concentration measure.
+
+**4. Cold-start.** Content-based is the only method that can recommend an artist with no
+listening history (it needs only tags); CF and ALS cannot rank an item absent from training.
+This is content-based's structural advantage despite its lower accuracy.
+
+**5. Scalability.** Two cost profiles: memory-based CF trains in ~0.02s but stores an
+item-item similarity matrix (grows with catalogue^2); ALS pays ~6.3s training but serves
+from compact factor matrices in ~0.2ms. Choice depends on catalogue size and update cadence.
+
+**Recommendation:** for this dataset, ship **item-item CF** as the default (best accuracy +
+coverage, trivial training), blend in **content-based** for cold-start and novelty, and keep
+**popularity** as the cold-user fallback. No single model is best on all axes - the right
+system is a portfolio.
+
+**Definition of done:** met. Unified comparison + figures regenerated from one script /
+notebook; popularity-bias metrics added; written analysis complete; UX polished; tests green.
+
+---
+
 ## Module 6 - Matrix factorisation (implicit ALS) (2026-06-25)
 
 **Goal:** hand-implement implicit ALS (Hu/Koren/Volinsky 2008) and add latency/scalability

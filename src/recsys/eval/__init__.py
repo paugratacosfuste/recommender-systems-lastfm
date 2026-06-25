@@ -5,7 +5,9 @@ from recsys.eval.beyond_accuracy import (
     build_item_popularity,
     catalogue_coverage,
     intra_list_diversity,
+    mean_recommended_popularity,
     novelty,
+    recommendation_exposure_gini,
 )
 from recsys.eval.harness import compare_models, evaluate
 from recsys.eval.metrics import (
@@ -25,6 +27,8 @@ __all__ = [
     "catalogue_coverage",
     "intra_list_diversity",
     "novelty",
+    "mean_recommended_popularity",
+    "recommendation_exposure_gini",
     "build_item_popularity",
     "BeyondAccuracyInputs",
 ]

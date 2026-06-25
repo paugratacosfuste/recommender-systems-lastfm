@@ -43,6 +43,8 @@ METRIC_COLS = [
     "coverage",
     "diversity",
     "novelty",
+    "popularity_bias",
+    "exposure_gini",
     "fit_seconds",
     "recommend_ms",
 ]

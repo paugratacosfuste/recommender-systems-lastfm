@@ -9,7 +9,7 @@
 <body>
   <main class="container">
     <h1>Music Recommender</h1>
-    <p class="subtitle">Last.fm HetRec 2011 - Phase 0 prototype</p>
+    <p class="subtitle">Last.fm HetRec 2011 - method comparison prototype</p>
 
     <form method="get" action="/" class="controls">
       <label for="method">Method</label>
@@ -28,7 +28,21 @@
       <noscript><button type="submit">Show</button></noscript>
     </form>
 
+    <section class="taste">
+      <h2>User {{ selected_user }} listens to</h2>
+      <ul class="chips">
+        {% for a in top_artists %}
+          <li>{{ a.name }}
+            {% if a.tags %}<span class="muted">- {{ a.tags|join(', ') }}</span>{% endif %}
+          </li>
+        {% else %}
+          <li class="muted">No listening history.</li>
+        {% endfor %}
+      </ul>
+    </section>
+
     <section class="metric">
+      <p class="method-desc">{{ method_description }}</p>
       Offline quality of <strong>{{ selected_method }}</strong> on held-out data
       <span class="muted">(averaged over {{ n_eval_users }} users)</span>:
       <div class="metric-row">
@@ -46,11 +60,13 @@
       {% endif %}
     </section>
 
-    <h2>Top {{ recommendations|length }} for user {{ selected_user }}</h2>
+    <h2>Recommended for user {{ selected_user }}</h2>
     <ol class="recs">
       {% for rec in recommendations %}
-        <li><span class="rank">{{ loop.index }}</span> {{ rec.name }}
-          <span class="muted">(artist {{ rec.artist_id }})</span></li>
+        <li><span class="rank">{{ loop.index }}</span>
+          <span class="rec-name">{{ rec.name }}</span>
+          {% if rec.tags %}<span class="muted">{{ rec.tags|join(', ') }}</span>{% endif %}
+        </li>
       {% else %}
         <li class="muted">No recommendations.</li>
       {% endfor %}

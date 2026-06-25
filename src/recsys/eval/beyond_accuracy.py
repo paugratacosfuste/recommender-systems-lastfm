@@ -17,11 +17,14 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from collections import Counter
+
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 
 from recsys.config import ITEM_COL, USER_COL
+from recsys.data.eda import gini
 
 
 def catalogue_coverage(rec_lists: Sequence[Sequence[int]], n_catalogue: int) -> float:
@@ -98,6 +101,48 @@ def novelty(recommended: Sequence[int], popularity: dict[int, float]) -> float:
         -math.log2(popularity[i]) for i in recommended if popularity.get(i, 0.0) > 0.0
     ]
     return float(sum(values) / len(values)) if values else 0.0
+
+
+def mean_recommended_popularity(
+    rec_lists: Sequence[Sequence[int]], popularity: dict[int, float]
+) -> float:
+    """Average popularity of all recommended items (a direct popularity-bias measure).
+
+    Higher means the system leans on already-popular artists; lower means it ventures into
+    the long tail.
+
+    Returns
+    -------
+    float
+        Mean popularity probability across every recommended item; 0.0 if none.
+    """
+    values = [popularity.get(i, 0.0) for lst in rec_lists for i in lst]
+    return float(sum(values) / len(values)) if values else 0.0
+
+
+def recommendation_exposure_gini(
+    rec_lists: Sequence[Sequence[int]], n_catalogue: int
+) -> float:
+    """Gini of how often each catalogue item is recommended (aggregate concentration).
+
+    0 = every artist gets equal exposure; near 1 = recommendations pile onto a few artists
+    while most are never shown. This captures popularity bias at the *system* level (across
+    all users) rather than per list.
+
+    Parameters
+    ----------
+    rec_lists : sequence of sequence of int
+        One recommendation list per user.
+    n_catalogue : int
+        Catalogue size (items never recommended count as zero exposure).
+    """
+    if n_catalogue <= 0:
+        raise ValueError("n_catalogue must be positive")
+    counts = Counter(i for lst in rec_lists for i in lst)
+    exposure = np.zeros(n_catalogue, dtype=float)
+    values = np.array(list(counts.values()), dtype=float)
+    exposure[: min(len(values), n_catalogue)] = values[:n_catalogue]
+    return gini(exposure)
 
 
 def build_item_popularity(interactions: pd.DataFrame) -> dict[int, float]:

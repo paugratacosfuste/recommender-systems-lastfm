@@ -10,7 +10,9 @@ from recsys.eval.beyond_accuracy import (
     build_item_popularity,
     catalogue_coverage,
     intra_list_diversity,
+    mean_recommended_popularity,
     novelty,
+    recommendation_exposure_gini,
 )
 
 
@@ -59,6 +61,34 @@ def test_novelty_skips_unknown_items():
     pop = {1: 0.5}
     assert novelty([1, 999], pop) == pytest.approx(1.0)
     assert novelty([999], pop) == 0.0
+
+
+def test_mean_recommended_popularity_averages_over_all_recs():
+    pop = {1: 0.9, 2: 0.1, 3: 0.5}
+    # Items across two lists: [1,2] and [3] -> mean of 0.9, 0.1, 0.5 = 0.5
+    assert mean_recommended_popularity([[1, 2], [3]], pop) == pytest.approx(0.5)
+
+
+def test_mean_recommended_popularity_empty_is_zero():
+    assert mean_recommended_popularity([], {1: 0.5}) == 0.0
+
+
+def test_exposure_gini_equal_when_all_items_shown_equally():
+    # Every catalogue item recommended once -> equal exposure -> gini 0.
+    assert recommendation_exposure_gini([[1, 2, 3, 4]], n_catalogue=4) == pytest.approx(
+        0.0, abs=1e-9
+    )
+
+
+def test_exposure_gini_high_when_concentrated():
+    # Same one item recommended to everyone, large catalogue -> near-total concentration.
+    g = recommendation_exposure_gini([[1], [1], [1]], n_catalogue=100)
+    assert g > 0.95
+
+
+def test_exposure_gini_requires_positive_catalogue():
+    with pytest.raises(ValueError):
+        recommendation_exposure_gini([[1]], n_catalogue=0)
 
 
 def test_build_item_popularity_fraction_of_users():

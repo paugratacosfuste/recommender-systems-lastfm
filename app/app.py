@@ -39,6 +39,8 @@ def index() -> str:
         user_ids=service.user_ids,
         selected_user=selected_user,
         recommendations=recommendations,
+        top_artists=service.user_top_artists(selected_user),
+        method_description=service.description(selected_method),
         methods=service.methods,
         selected_method=selected_method,
         precision=metrics["precision_at_k"],
