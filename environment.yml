@@ -17,6 +17,7 @@ dependencies:
   - pytest-cov
   - black
   - ruff
+  - reportlab  # PDF report generation (scripts/build_report.py)
   - pip
   # implicit / lightfm (library benchmarks) are added in Module 4/6 to keep the
   # Phase 0 environment solve fast.
