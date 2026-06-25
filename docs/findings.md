@@ -71,6 +71,28 @@ coverage, trivial training), blend in **content-based** for cold-start and novel
 **popularity** as the cold-user fallback. No single model is best on all axes - the right
 system is a portfolio.
 
+### Honest limitations (stated explicitly)
+
+- **Random, not temporal, split** - can leak later listens into training; a time-based split
+  would be more realistic and likely lower scores.
+- **Single split, one seed** - no cross-validation, confidence intervals, or significance
+  testing, so small gaps (e.g. user-user CF vs ALS) are not statistically validated.
+- **Light tuning** - only ALS was tuned, coarsely, with factors/iterations capped for
+  runtime (likely under-fit). The planned `implicit`-library cross-check of the hand-written
+  ALS was not done; it is validated only by unit tests.
+- **Accuracy rewards re-discovery, not discovery** - relevance = held-out artists the user
+  already played, so accuracy is structurally popularity-biased; beyond-accuracy softens but
+  does not remove this.
+- **Cold-start argued, not measured** - content-based's advantage is structural, never
+  quantified with a held-out new-user/new-artist experiment.
+- **Beyond-accuracy blind spots** - diversity is tag-space only (untagged artists skipped),
+  novelty derives from train popularity, exposure Gini is near-saturated for all methods.
+- **Small, dense dataset** - HetRec keeps ~top-50 artists per user, making the popularity
+  baseline unusually strong; generalisation to larger/sparser catalogues is untested.
+- **Scalability is descriptive** - costs reported at this scale only, not stress-tested.
+- **Unused signal** - the friendship graph is not exploited.
+- **Prototype UX** - functional, not user-tested.
+
 **Definition of done:** met. Unified comparison + figures regenerated from one script /
 notebook; popularity-bias metrics added; written analysis complete; UX polished; tests green.
 

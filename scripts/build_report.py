@@ -291,7 +291,43 @@ def build() -> None:
         "meaningful in tag space.",
     ])
 
-    h1("9. Conclusion and recommendation")
+    h1("9. Honest limitations and threats to validity")
+    p("The results above should be read with the following limitations in mind. They are "
+      "stated explicitly rather than buried, because several of them would change the "
+      "numbers if addressed.")
+    bullets([
+        "<b>Random, not temporal, split.</b> Evaluation uses a per-user random hold-out, "
+        "which can leak later listens into training. A time-based split would be more "
+        "realistic and would likely lower the reported scores.",
+        "<b>Single split, no significance testing.</b> Results are one seed with no "
+        "cross-validation or confidence intervals, so small gaps between methods (for "
+        "example user-user CF versus ALS) are not statistically validated.",
+        "<b>Light hyperparameter tuning.</b> Only ALS was tuned, and only coarsely; its "
+        "factors and iterations were capped for runtime, so it is likely under-fit. The "
+        "planned cross-check against the reference implicit library was not done, so the "
+        "hand-written ALS is validated only by unit tests.",
+        "<b>Accuracy rewards re-discovery, not discovery.</b> Relevant items are artists the "
+        "user already played and we held out, so accuracy metrics favour re-finding known "
+        "tastes and are structurally biased toward popular items; beyond-accuracy metrics "
+        "soften but do not remove this.",
+        "<b>Cold-start is argued, not measured.</b> Content-based filtering's cold-start "
+        "advantage is structural but was never quantified with a held-out new-user or "
+        "new-artist experiment.",
+        "<b>Beyond-accuracy blind spots.</b> Intra-list diversity is computed only in tag "
+        "space (untagged artists are skipped), novelty is derived from training popularity, "
+        "and exposure Gini is near-saturated for every method because ten slots across "
+        "17,632 artists can only ever touch a fraction of the catalogue.",
+        "<b>Small, dense dataset.</b> HetRec keeps roughly the top 50 artists per user, which "
+        "makes the popularity baseline unusually strong and may flatter the neighbourhood "
+        "methods; generalisation to a larger, sparser catalogue is untested.",
+        "<b>Scalability is descriptive only.</b> Training and serving costs are reported at "
+        "this dataset's scale; none of the methods were stress-tested at production scale.",
+        "<b>Unused signal.</b> The user friendship graph is available but not exploited, "
+        "leaving a social recommendation angle on the table.",
+        "<b>Prototype UX.</b> The interface is functional and not user-tested.",
+    ])
+
+    h1("10. Conclusion and recommendation")
     p("Accuracy is necessary but not sufficient. The right production system for this dataset "
       "is a portfolio: ship item-item CF as the default for its strong accuracy, broad "
       "coverage, and near-instant training; blend in content-based filtering for cold-start "

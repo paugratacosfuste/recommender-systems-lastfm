@@ -111,14 +111,24 @@ keeping comparison fair (one split, one harness, interchangeable models); hand-i
 ALS correctly (validated with a closed-form unit test + a synthetic two-cluster sanity test);
 the diversity metric only meaningful in tag space; balancing accuracy against bias.
 
-**15. Final remarks.** No single model wins on all axes - the right system is a **portfolio**:
+**15. Honest limitations.** State them plainly (this was explicitly requested): random (not
+temporal) split can leak future listens; single split / one seed, so no significance testing;
+ALS only coarsely tuned and capped for runtime (likely under-fit), and not cross-checked
+against the `implicit` library; accuracy rewards re-discovering already-played artists, not
+true discovery, and is popularity-biased by construction; cold-start is argued for
+content-based but not measured; diversity is tag-space only and exposure Gini is near-
+saturated for all methods; the dataset is small and dense (top ~50 artists per user), which
+flatters the popularity baseline; the friendship graph is unused; the UI is a prototype, not
+user-tested.
+
+**16. Final remarks.** No single model wins on all axes - the right system is a **portfolio**:
 ship item-item CF as the default (best accuracy + coverage, trivial training), add
 content-based for cold-start and novelty, keep popularity as the cold-user fallback. Key
 lesson: accuracy is necessary but not sufficient; diversity, novelty, coverage, bias, and
 scalability all matter. Next steps: hybrid blending, learning-to-rank, temporal split,
 `implicit`-library cross-check.
 
-**16. Closing.** "Accuracy is necessary. It is not sufficient." + thank-you / Q&A.
+**17. Closing.** "Accuracy is necessary. It is not sufficient." + thank-you / Q&A.
 
 ## Design requirements
 - 16:9, one slide per viewport, arrow-key + on-screen nav, slide counter.
