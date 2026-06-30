@@ -7,6 +7,7 @@ scikit-learn>=1.3
 pyarrow>=12.0
 # App
 flask>=3.0
+gunicorn>=21.0   # production WSGI server (deployment)
 # EDA / notebooks / figures
 matplotlib>=3.7
 seaborn>=0.12
