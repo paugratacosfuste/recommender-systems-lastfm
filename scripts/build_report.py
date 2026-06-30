@@ -179,6 +179,70 @@ def comparison_table() -> None:
     )
 
 
+def _content_variant_sentence() -> str:
+    """One-line TF-IDF vs raw ablation result, read from the generated CSV."""
+    df = pd.read_csv(DOCS / "content_tfidf_vs_raw.csv", index_col=0)
+    tf = df.loc["TF-IDF"]
+    raw = df.loc["raw counts"]
+    return (
+        "An ablation comparing TF-IDF tag weighting against raw L2-normalised tag counts "
+        f"found them essentially equivalent on this data (Precision@10 {tf['precision_at_k']:.3f} "
+        f"vs {raw['precision_at_k']:.3f}; NDCG {tf['ndcg_at_k']:.3f} vs {raw['ndcg_at_k']:.3f}), "
+        "indicating the tag co-occurrence signal is already informative without inverse-"
+        "document weighting."
+    )
+
+
+def examples_section() -> None:
+    """Render side-by-side recommendation examples from the generated CSV."""
+    df = pd.read_csv(DOCS / "recommendation_examples.csv")
+    p(
+        "To show how the algorithms differ in practice, the table below gives the top-5 "
+        "recommendations for three users from a representative set of methods. Each user's "
+        "actual most-played artists are listed so the fit can be judged directly."
+    )
+    for user in df["user_id"].unique():
+        sub = df[df["user_id"] == user]
+        story.append(
+            Paragraph(
+                f"<b>User {user}</b> - listens to: {sub['user_taste'].iloc[0]}", BODY
+            )
+        )
+        rows = [["Method", "Top-5 recommendations"]]
+        rows.extend([[r["method"], r["recommendations"]] for _, r in sub.iterrows()])
+        t = Table(rows, colWidths=[3.4 * cm, 12.6 * cm], hAlign="LEFT")
+        t.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    (
+                        "ROWBACKGROUNDS",
+                        (0, 1),
+                        (-1, -1),
+                        [colors.white, colors.HexColor("#eef1f8")],
+                    ),
+                    ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#c8ced8")),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 3),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ]
+            )
+        )
+        story.append(t)
+        story.append(Spacer(1, 8))
+    p(
+        "The contrast is clearest for the niche user: popularity recommends mainstream pop "
+        "(Lady Gaga, Britney Spears) to an ambient / modern-classical listener, while the "
+        "personalised methods correctly surface ambient and IDM artists. Item-item CF stays "
+        "closest to the exact niche, content-based pulls tag-similar artists, social surfaces "
+        "what friends play, and ALS generalises - occasionally drifting toward the mainstream "
+        "for very niche tastes."
+    )
+
+
 def _footer(canvas, doc) -> None:
     canvas.saveState()
     canvas.setFont("Helvetica", 8)
@@ -258,6 +322,12 @@ def build() -> None:
         "play_count_distribution.png",
         "Figure 2. Raw play counts (left) versus log(1 + plays) (right).",
     )
+    p(
+        "User activity, by contrast, is remarkably uniform: HetRec keeps roughly the top 50 "
+        "artists per user, so the most active users differ little from the median (the "
+        "EDA notebook lists the top 10). This near-absence of low-activity users is why the "
+        "cold-start analysis later finds essentially no cold users to stress-test."
+    )
 
     story.append(PageBreak())
     h1("4. System design and engineering decisions")
@@ -277,7 +347,7 @@ def build() -> None:
             "<b>Hybrid implementation.</b> Core algorithms (cosine kNN, TF-IDF profiles, ALS) "
             "are hand-implemented to demonstrate understanding, while numpy / scipy / sklearn "
             "provide the heavy linear algebra for speed.",
-            "<b>Test-driven development.</b> 75 tests at 94% coverage, including closed-form and "
+            "<b>Test-driven development.</b> 81 tests at 94% coverage, including closed-form and "
             "known-answer checks for the numerically tricky pieces (metrics, the ALS update).",
             "<b>Agile, vertical-slice first.</b> A thin end-to-end path (load -> popularity -> "
             "one screen -> one metric) was built before deepening any module, de-risking "
@@ -316,6 +386,7 @@ def build() -> None:
         "Its structural advantage is cold-start: it can recommend an artist with no listening "
         "history at all, which neither CF nor matrix factorisation can do."
     )
+    p(_content_variant_sentence())
     h2("5.4 Matrix factorisation (implicit ALS)")
     p(
         "Implicit Alternating Least Squares (Hu, Koren and Volinsky 2008) is implemented from "
@@ -411,7 +482,11 @@ def build() -> None:
     )
     figure("cold_start.png", "Figure 7. Cold-user accuracy by training-history quartile.")
 
-    h1("8. Critical analysis")
+    story.append(PageBreak())
+    h1("8. Recommendation examples")
+    examples_section()
+
+    h1("9. Critical analysis")
     bullets(
         [
             "<b>No universal winner.</b> Item-item CF leads accuracy and coverage; ALS gives the "
@@ -436,7 +511,7 @@ def build() -> None:
         ]
     )
 
-    h1("9. Honest limitations and threats to validity")
+    h1("10. Honest limitations and threats to validity")
     p(
         "Several earlier shortcomings were fixed rather than excused: results are now averaged "
         "over five splits, ALS was tuned on a validation set, cold-start was measured, and the "
@@ -473,7 +548,7 @@ def build() -> None:
         ]
     )
 
-    h1("10. Conclusion and recommendation")
+    h1("11. Conclusion and recommendation")
     p(
         "Accuracy is necessary but not sufficient. The right production system for this dataset "
         "is a portfolio: ship item-item CF as the default for its strong accuracy, broad "
@@ -487,9 +562,11 @@ def build() -> None:
         "<b>Reproducibility.</b> The dataset is fetched by scripts/download_data.py; "
         "scripts/build_processed.py caches the processed artifacts; scripts/evaluate_baselines."
         "py regenerates the multi-seed comparison; scripts/tune_als.py reproduces the ALS "
-        "validation search; scripts/cold_start.py reproduces the cold-start analysis; the EDA "
-        "and evaluation notebooks regenerate every figure; and the full test suite (78 tests, "
-        "94% coverage) guards correctness."
+        "validation search; scripts/cold_start.py the cold-start analysis; "
+        "scripts/recommendation_examples.py the examples; scripts/content_variant.py the "
+        "TF-IDF ablation; `python main.py` runs the whole pipeline end to end; the notebooks "
+        "regenerate every figure; and the full test suite (81 tests, 94% coverage) guards "
+        "correctness."
     )
 
     doc = SimpleDocTemplate(

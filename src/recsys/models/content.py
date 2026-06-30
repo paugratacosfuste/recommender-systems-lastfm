@@ -34,18 +34,23 @@ from recsys.models.cf import _top_n_item_ids
 
 def build_artist_tag_profiles(
     tagged_artists: pd.DataFrame,
+    use_tfidf: bool = True,
 ) -> tuple[csr_matrix, np.ndarray]:
-    """Build L2-normalised TF-IDF artist profiles from tag assignments.
+    """Build L2-normalised artist tag profiles from tag assignments.
 
     Parameters
     ----------
     tagged_artists : pandas.DataFrame
         Columns ``[user_id, artist_id, tag_id]`` (one row per assignment).
+    use_tfidf : bool
+        If True (default), weight tags with TF-IDF so distinctive tags outweigh ubiquitous
+        ones. If False, use raw L2-normalised tag counts - the ablation baseline for the
+        "TF-IDF vs raw genre vectors" comparison.
 
     Returns
     -------
     (profiles, artist_ids) : tuple
-        ``profiles`` is a sparse ``(n_artists, n_tags)`` TF-IDF matrix (rows unit-norm);
+        ``profiles`` is a sparse ``(n_artists, n_tags)`` matrix (rows unit-norm);
         ``artist_ids`` gives the artist id for each row.
     """
     artist_ids = np.sort(tagged_artists[ITEM_COL].unique())
@@ -61,22 +66,26 @@ def build_artist_tag_profiles(
         shape=(len(artist_ids), len(tag_ids)),
     )
 
-    profiles = TfidfTransformer(norm="l2").fit_transform(count_matrix)
+    if use_tfidf:
+        profiles = TfidfTransformer(norm="l2").fit_transform(count_matrix)
+    else:
+        profiles = normalize(count_matrix, norm="l2", axis=1)
     return profiles.tocsr(), artist_ids
 
 
 class ContentBasedRecommender(BaseRecommender):
     """Recommend artists whose tag profile matches the user's listening-weighted taste."""
 
-    def __init__(self, tagged_artists: pd.DataFrame) -> None:
+    def __init__(self, tagged_artists: pd.DataFrame, use_tfidf: bool = True) -> None:
         self._tagged_artists = tagged_artists
+        self.use_tfidf = use_tfidf
         self._artist_profiles: csr_matrix | None = None
         self._mapping: IndexMapping | None = None
 
     def fit(self, interactions: pd.DataFrame) -> "ContentBasedRecommender":
         # Artist tag space (independent of the train split).
         self._artist_profiles, artist_ids = build_artist_tag_profiles(
-            self._tagged_artists
+            self._tagged_artists, use_tfidf=self.use_tfidf
         )
         user_ids = np.sort(interactions[USER_COL].unique())
         # Item axis is the *tagged* artists; interactions on untagged artists are dropped.

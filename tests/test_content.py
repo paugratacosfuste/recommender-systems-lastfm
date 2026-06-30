@@ -38,6 +38,26 @@ def test_content_excludes_seen(sample_tagged_artists):
     assert 1 not in recs and 4 not in recs
 
 
+def test_raw_profiles_are_normalised_and_differ_from_tfidf(sample_tagged_artists):
+    tfidf, _ = build_artist_tag_profiles(sample_tagged_artists, use_tfidf=True)
+    raw, _ = build_artist_tag_profiles(sample_tagged_artists, use_tfidf=False)
+    assert tfidf.shape == raw.shape
+    # Raw rows are still L2-normalised.
+    raw_norms = np.sqrt(raw.multiply(raw).sum(axis=1)).A.ravel()
+    assert np.allclose(raw_norms, 1.0)
+    # TF-IDF reweights, so the matrices are not identical.
+    assert not np.allclose(tfidf.toarray(), raw.toarray())
+
+
+def test_content_raw_variant_still_recommends(sample_tagged_artists):
+    interactions = pd.DataFrame({USER_COL: [10], ITEM_COL: [1], WEIGHT_COL: [100]})
+    model = ContentBasedRecommender(sample_tagged_artists, use_tfidf=False).fit(
+        interactions
+    )
+    recs = model.recommend(user_id=10, n=2)
+    assert set(recs) == {4, 5}  # electronic+idm neighbours, same as TF-IDF here
+
+
 def test_content_unknown_user_returns_empty(sample_tagged_artists):
     interactions = pd.DataFrame({USER_COL: [10], ITEM_COL: [1], WEIGHT_COL: [100]})
     model = ContentBasedRecommender(sample_tagged_artists).fit(interactions)

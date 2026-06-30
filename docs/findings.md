@@ -5,6 +5,33 @@ method comparison, final remarks). Newest entries at the top.
 
 ---
 
+## Guidelines alignment pass (2026-06-30)
+
+Cross-checked the project against the teacher's `recommender_assignment_placeholders`
+guidelines and closed the remaining gaps.
+
+**What was added**
+- **Recommendation examples** (required component + report section): three users x five
+  methods, top-5 each, with each user's taste. `scripts/recommendation_examples.py` ->
+  `docs/recommendation_examples.csv`; `notebooks/03_recommendation_examples.ipynb`; new
+  report section 8 (renumbered Critical analysis/Limitations/Conclusion to 9/10/11).
+- **Most active users** EDA: `eda.most_active_users()` + a cell in `01_eda.ipynb`.
+- **TF-IDF vs raw tag vectors** ablation: `ContentBasedRecommender(use_tfidf=...)`;
+  `scripts/content_variant.py` -> `docs/content_tfidf_vs_raw.csv`. Result: essentially tied
+  (P@10 0.0994 vs 0.0993) - tag co-occurrence is already informative.
+- **Run-contract compatibility**: `requirements.txt` (pip mirror) and a working `main.py`
+  end-to-end orchestrator, matching the template's `python main.py` entry point.
+- Tests: 81 total, 94% coverage. All counts updated across report + deck + this log.
+
+**Why the examples matter:** popularity recommends Lady Gaga / Britney Spears to an
+ambient / modern-classical listener, while the personalised methods correctly surface
+Aphex Twin / Biosphere - the "accuracy is not enough" thesis made concrete.
+
+**Note:** the 8-method comparison results are unchanged (the additions do not alter any
+method or its evaluation), so the comparison table stays valid everywhere it appears.
+
+---
+
 ## Rigor pass - fixing fixable limitations (2026-06-25)
 
 After review feedback ("include your honest limitations"), several limitations that were

@@ -71,6 +71,24 @@ def popularity_curve(interactions: pd.DataFrame) -> pd.Series:
     )
 
 
+def most_active_users(interactions: pd.DataFrame, n: int = 10) -> pd.DataFrame:
+    """The ``n`` users with the most interactions (and their total plays).
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``[user_id, n_artists, total_plays]``, sorted by ``n_artists`` descending.
+    """
+    grouped = interactions.groupby(USER_COL)
+    table = pd.DataFrame(
+        {
+            "n_artists": grouped.size(),
+            "total_plays": grouped[WEIGHT_COL].sum(),
+        }
+    )
+    return table.sort_values("n_artists", ascending=False).head(n).reset_index()
+
+
 def top_k_play_share(interactions: pd.DataFrame, k: int) -> float:
     """Share of all plays captured by the ``k`` most popular artists.
 

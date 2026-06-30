@@ -1,6 +1,12 @@
 """Data loading, preprocessing, splitting, and exploratory statistics."""
 
-from recsys.data.eda import gini, popularity_curve, summary_stats, top_k_play_share
+from recsys.data.eda import (
+    gini,
+    most_active_users,
+    popularity_curve,
+    summary_stats,
+    top_k_play_share,
+)
 from recsys.data.loader import (
     load_artists,
     load_tags,
@@ -30,6 +36,7 @@ __all__ = [
     "confidence",
     "log_scale",
     "gini",
+    "most_active_users",
     "popularity_curve",
     "summary_stats",
     "top_k_play_share",

@@ -5,7 +5,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from recsys.data.eda import gini, popularity_curve, summary_stats, top_k_play_share
+from recsys.data.eda import (
+    gini,
+    most_active_users,
+    popularity_curve,
+    summary_stats,
+    top_k_play_share,
+)
 
 
 def test_gini_of_equal_distribution_is_zero():
@@ -41,6 +47,17 @@ def test_popularity_curve_is_descending(sample_interactions):
     curve = popularity_curve(sample_interactions)
     assert list(curve) == sorted(curve, reverse=True)
     assert curve.iloc[0] == 240  # artist 1 is most played
+
+
+def test_most_active_users(sample_interactions):
+    from recsys.config import USER_COL
+
+    top = most_active_users(sample_interactions, n=2)
+    assert list(top.columns) == [USER_COL, "n_artists", "total_plays"]
+    assert len(top) == 2
+    # Users 1, 2, 3 have 3 artists each; user 4 has only 2, so never in the top 2.
+    assert (top["n_artists"] == 3).all()
+    assert 4 not in set(top[USER_COL])
 
 
 def test_top_k_play_share(sample_interactions):

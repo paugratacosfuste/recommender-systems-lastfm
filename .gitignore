@@ -17,3 +17,10 @@ htmlcov/
 # Env / OS
 .env
 .DS_Store
+
+# Submission bundle (duplicates of tracked files; regenerated as needed)
+Final_Submission/
+
+# Teacher-provided template (not our work)
+recommender_assignment_placeholders/
+recommender_assignment_placeholders.zip

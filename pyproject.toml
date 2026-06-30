@@ -21,3 +21,9 @@ line-length = 90
 
 [tool.ruff]
 line-length = 90
+
+[tool.ruff.lint.per-file-ignores]
+# main.py and cold_start.py set sys.path before importing recsys so they run under a
+# plain `pip install` (not only the editable install), which legitimately needs E402.
+"main.py" = ["E402"]
+"scripts/cold_start.py" = ["E402"]

@@ -1,0 +1,16 @@
+user_id,user_taste,method,recommendations
+2,Duran Duran; Morcheeba; Air,Popularity (listeners),Britney Spears; Katy Perry; The Beatles; Rihanna; Avril Lavigne
+2,Duran Duran; Morcheeba; Air,Item-item CF,Pet Shop Boys; Orchestral Manoeuvres in the Dark; The Human League; Simple Minds; Ultravox
+2,Duran Duran; Morcheeba; Air,Content-based,Pet Shop Boys; Eurythmics; Moby; Soft Cell; Freur
+2,Duran Duran; Morcheeba; Air,ALS (MF),The Prodigy; Pet Shop Boys; Moby; Robbie Williams; Simple Minds
+2,Duran Duran; Morcheeba; Air,Social (friends),Pet Shop Boys; Erasure; U2; Thompson Twins; The Cure
+3,Pleq; Segue; Max Richter,Popularity (listeners),Lady Gaga; Britney Spears; Katy Perry; The Beatles; Rihanna
+3,Pleq; Segue; Max Richter,Item-item CF,ksandr; Noto; ksandr and I.M.M.U.R.E.; Alva Noto + Ryuichi Sakamoto with Ensemble Modern; Arbre Noir
+3,Pleq; Segue; Max Richter,Content-based,Aphex Twin; #11715; Biosphere; Helios; The Future Sound of London
+3,Pleq; Segue; Max Richter,ALS (MF),The Cranberries; 30 Seconds to Mars; Muse; Janelle Monáe; Pearl Jam
+3,Pleq; Segue; Max Richter,Social (friends),Aphex Twin; Venetian Snares; Sigur Rós; Apparat; Björk
+4,Depeche Mode; Porcupine Tree; De/Vision,Popularity (listeners),Lady Gaga; Britney Spears; Katy Perry; The Beatles; Rihanna
+4,Depeche Mode; Porcupine Tree; De/Vision,Item-item CF,Coldplay; Pet Shop Boys; The Beatles; Muse; New Order
+4,Depeche Mode; Porcupine Tree; De/Vision,Content-based,Muse; The Connells; R.E.M.; Coldplay; No Doubt
+4,Depeche Mode; Porcupine Tree; De/Vision,ALS (MF),Muse; Coldplay; 30 Seconds to Mars; Snow Patrol; Hurts
+4,Depeche Mode; Porcupine Tree; De/Vision,Social (friends),Dave Gahan; Martin L. Gore; Coldplay; Recoil; And One
