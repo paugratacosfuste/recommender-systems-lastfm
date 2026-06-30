@@ -34,6 +34,51 @@ def index() -> str:
 
     recommendations = service.recommend(selected_method, selected_user)
     metrics = service.metrics(selected_method)
+    k = int(metrics["k"])
+
+    # Metric cards with plain-language hints, so a first-time viewer understands them.
+    accuracy_cards = [
+        {
+            "label": f"Precision@{k}",
+            "value": f"{metrics['precision_at_k']:.3f}",
+            "hint": "of the picks shown, the share the user actually liked",
+        },
+        {
+            "label": f"Recall@{k}",
+            "value": f"{metrics['recall_at_k']:.3f}",
+            "hint": "of everything the user liked, the share we surfaced",
+        },
+        {
+            "label": f"MAP@{k}",
+            "value": f"{metrics['map_at_k']:.3f}",
+            "hint": "rewards putting the right items near the top",
+        },
+        {
+            "label": f"NDCG@{k}",
+            "value": f"{metrics['ndcg_at_k']:.3f}",
+            "hint": "overall ranking quality (top hits count more)",
+        },
+    ]
+    beyond_cards = []
+    if metrics.get("coverage") is not None:
+        beyond_cards = [
+            {
+                "label": "Coverage",
+                "value": f"{metrics['coverage']:.3f}",
+                "hint": "share of the whole catalogue this method ever recommends",
+            },
+            {
+                "label": "Diversity",
+                "value": f"{metrics['diversity']:.3f}",
+                "hint": "how varied the artists within one list are",
+            },
+            {
+                "label": "Novelty",
+                "value": f"{metrics['novelty']:.2f}",
+                "hint": "how non-mainstream the picks are (higher = deeper cuts)",
+            },
+        ]
+
     return render_template(
         "index.html",
         user_ids=service.user_ids,
@@ -43,14 +88,10 @@ def index() -> str:
         method_description=service.description(selected_method),
         methods=service.methods,
         selected_method=selected_method,
-        precision=metrics["precision_at_k"],
-        recall=metrics["recall_at_k"],
-        mean_ap=metrics["map_at_k"],
-        ndcg=metrics["ndcg_at_k"],
-        coverage=metrics.get("coverage"),
-        diversity=metrics.get("diversity"),
-        novelty=metrics.get("novelty"),
-        k=int(metrics["k"]),
+        is_personalised="Popularity" not in selected_method,
+        accuracy_cards=accuracy_cards,
+        beyond_cards=beyond_cards,
+        k=k,
         n_eval_users=int(metrics["n_users"]),
     )
 

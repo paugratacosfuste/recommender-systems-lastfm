@@ -3,74 +3,126 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Music Recommender - Prototype</title>
+  <title>Music Recommender - Method Explorer</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+  <header class="hero">
+    <div class="hero-inner">
+      <h1>🎧 Music Recommender</h1>
+      <p class="tagline">
+        Compare eight recommendation methods on the Last.fm dataset - see what each one
+        suggests for a listener, and how good those suggestions actually are.
+      </p>
+      <ol class="steps">
+        <li><span>1</span> Pick a listener</li>
+        <li><span>2</span> Pick a method</li>
+        <li><span>3</span> Compare the picks &amp; the scores</li>
+      </ol>
+    </div>
+  </header>
+
   <main class="container">
-    <h1>Music Recommender</h1>
-    <p class="subtitle">Last.fm HetRec 2011 - method comparison prototype</p>
-
     <form method="get" action="/" class="controls">
-      <label for="method">Method</label>
-      <select id="method" name="method" onchange="this.form.submit()">
-        {% for m in methods %}
-          <option value="{{ m }}" {% if m == selected_method %}selected{% endif %}>{{ m }}</option>
-        {% endfor %}
-      </select>
-
-      <label for="user_id">User</label>
-      <select id="user_id" name="user_id" onchange="this.form.submit()">
-        {% for uid in user_ids %}
-          <option value="{{ uid }}" {% if uid == selected_user %}selected{% endif %}>{{ uid }}</option>
-        {% endfor %}
-      </select>
+      <div class="control">
+        <label for="user_id">Listener</label>
+        <select id="user_id" name="user_id" onchange="this.form.submit()">
+          {% for uid in user_ids %}
+            <option value="{{ uid }}" {% if uid == selected_user %}selected{% endif %}>User {{ uid }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="control">
+        <label for="method">Method</label>
+        <select id="method" name="method" onchange="this.form.submit()">
+          {% for m in methods %}
+            <option value="{{ m }}" {% if m == selected_method %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="method-note">
+        <span class="badge {{ 'personal' if is_personalised else 'generic' }}">
+          {{ 'Personalised' if is_personalised else 'Non-personalised' }}
+        </span>
+        <span class="method-desc">{{ method_description }}</span>
+      </div>
       <noscript><button type="submit">Show</button></noscript>
     </form>
 
-    <section class="taste">
-      <h2>User {{ selected_user }} listens to</h2>
-      <ul class="chips">
-        {% for a in top_artists %}
-          <li>{{ a.name }}
-            {% if a.tags %}<span class="muted">- {{ a.tags|join(', ') }}</span>{% endif %}
-          </li>
-        {% else %}
-          <li class="muted">No listening history.</li>
-        {% endfor %}
-      </ul>
-    </section>
+    <div class="grid">
+      <section class="panel taste-panel">
+        <h2>What user {{ selected_user }} listens to</h2>
+        <p class="panel-sub">Their most-played artists (the model never sees these as "answers").</p>
+        <ul class="chips">
+          {% for a in top_artists %}
+            <li>
+              <span class="chip-name">{{ a.name }}</span>
+              {% if a.tags %}<span class="chip-tags">{{ a.tags|join(' · ') }}</span>{% endif %}
+            </li>
+          {% else %}
+            <li class="muted">No listening history.</li>
+          {% endfor %}
+        </ul>
+      </section>
 
-    <section class="metric">
-      <p class="method-desc">{{ method_description }}</p>
-      Offline quality of <strong>{{ selected_method }}</strong> on held-out data
-      <span class="muted">(averaged over {{ n_eval_users }} users)</span>:
-      <div class="metric-row">
-        <span>Precision@{{ k }} <strong>{{ '%.4f'|format(precision) }}</strong></span>
-        <span>Recall@{{ k }} <strong>{{ '%.4f'|format(recall) }}</strong></span>
-        <span>MAP@{{ k }} <strong>{{ '%.4f'|format(mean_ap) }}</strong></span>
-        <span>NDCG@{{ k }} <strong>{{ '%.4f'|format(ndcg) }}</strong></span>
+      <section class="panel recs-panel">
+        <h2>Recommended by <span class="accent">{{ selected_method }}</span></h2>
+        <p class="panel-sub">Top {{ recommendations|length }} artists this user has not played yet.</p>
+        <ol class="recs">
+          {% for rec in recommendations %}
+            <li class="rec-card">
+              <span class="rank">{{ loop.index }}</span>
+              <span class="rec-body">
+                <span class="rec-name">{{ rec.name }}</span>
+                {% if rec.tags %}<span class="rec-tags">{{ rec.tags|join(' · ') }}</span>{% endif %}
+              </span>
+            </li>
+          {% else %}
+            <li class="muted">No recommendations.</li>
+          {% endfor %}
+        </ol>
+      </section>
+    </div>
+
+    <section class="panel scores-panel">
+      <div class="scores-head">
+        <h2>How good is <span class="accent">{{ selected_method }}</span>?</h2>
+        <p class="panel-sub">
+          Measured offline on held-out listening for {{ n_eval_users }} users - hover any card
+          for what it means. Higher is better for all of these.
+        </p>
       </div>
-      {% if coverage is not none %}
-      <div class="metric-row beyond">
-        <span>Coverage <strong>{{ '%.3f'|format(coverage) }}</strong></span>
-        <span>Diversity <strong>{{ '%.3f'|format(diversity) }}</strong></span>
-        <span>Novelty <strong>{{ '%.2f'|format(novelty) }}</strong></span>
+
+      <h3 class="group-title">Accuracy <span class="muted">- did we predict what they listen to?</span></h3>
+      <div class="metric-cards">
+        {% for c in accuracy_cards %}
+          <div class="metric-card" title="{{ c.hint }}">
+            <span class="metric-value">{{ c.value }}</span>
+            <span class="metric-label">{{ c.label }}</span>
+            <span class="metric-hint">{{ c.hint }}</span>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if beyond_cards %}
+      <h3 class="group-title">Beyond accuracy <span class="muted">- is it varied, fresh, and fair?</span></h3>
+      <div class="metric-cards">
+        {% for c in beyond_cards %}
+          <div class="metric-card beyond" title="{{ c.hint }}">
+            <span class="metric-value">{{ c.value }}</span>
+            <span class="metric-label">{{ c.label }}</span>
+            <span class="metric-hint">{{ c.hint }}</span>
+          </div>
+        {% endfor %}
       </div>
       {% endif %}
     </section>
 
-    <h2>Recommended for user {{ selected_user }}</h2>
-    <ol class="recs">
-      {% for rec in recommendations %}
-        <li><span class="rank">{{ loop.index }}</span>
-          <span class="rec-name">{{ rec.name }}</span>
-          {% if rec.tags %}<span class="muted">{{ rec.tags|join(', ') }}</span>{% endif %}
-        </li>
-      {% else %}
-        <li class="muted">No recommendations.</li>
-      {% endfor %}
-    </ol>
+    <footer class="foot">
+      Last.fm HetRec 2011 · implicit feedback · prototype for the ESADE Recommender Systems
+      individual project. Tip: switch a niche listener between <em>Popularity</em> and
+      <em>Item-item CF</em> to see personalisation kick in.
+    </footer>
   </main>
 </body>
 </html>
