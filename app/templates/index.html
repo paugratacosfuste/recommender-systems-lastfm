@@ -59,7 +59,8 @@
         <ul class="chips">
           {% for a in top_artists %}
             <li>
-              <span class="avatar" style="--h: {{ a.hue }}">{{ a.initial }}</span>
+              {% if a.image %}<img class="avatar avatar-photo" src="{{ a.image }}" alt="" loading="lazy" referrerpolicy="no-referrer">
+              {% else %}<span class="avatar" style="--h: {{ a.hue }}">{{ a.initial }}</span>{% endif %}
               <span class="chip-text">
                 <span class="chip-name">{{ a.name }}</span>
                 {% if a.tags %}<span class="pills">{% for t in a.tags %}<span class="pill">{{ t }}</span>{% endfor %}</span>{% endif %}
@@ -89,7 +90,8 @@
           {% for rec in recommendations %}
             <li class="rec-card">
               <span class="rank">{{ loop.index }}</span>
-              <span class="avatar" style="--h: {{ rec.hue }}">{{ rec.initial }}</span>
+              {% if rec.image %}<img class="avatar avatar-photo" src="{{ rec.image }}" alt="" loading="lazy" referrerpolicy="no-referrer">
+              {% else %}<span class="avatar" style="--h: {{ rec.hue }}">{{ rec.initial }}</span>{% endif %}
               <span class="rec-body">
                 <span class="rec-name">{{ rec.name }}</span>
                 {% if rec.tags %}<span class="pills">{% for t in rec.tags %}<span class="pill">{{ t }}</span>{% endfor %}</span>{% endif %}
@@ -158,6 +160,7 @@
       Last.fm HetRec 2011 · implicit feedback · prototype for the ESADE Recommender Systems
       individual project. Tip: switch a niche listener between <em>Popularity</em> and
       <em>Item-item CF</em> to see personalisation kick in.
+      <br>Artist photos via the Deezer API (load on demand; fall back to coloured initials offline).
     </footer>
   </main>
 </body>

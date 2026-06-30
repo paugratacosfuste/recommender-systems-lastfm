@@ -7,8 +7,12 @@ Later modules plug into the same registry - the app code does not change.
 
 from __future__ import annotations
 
+import json
+import urllib.parse
+import urllib.request
 import zlib
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 import pandas as pd
@@ -67,6 +71,7 @@ class Recommendation:
     plays: int | None = None
     initial: str = "?"
     hue: int = 0
+    image: str | None = None
 
 
 def _build_artist_top_tags(
@@ -96,6 +101,7 @@ class RecommenderService:
         tags = load_tags(RAW_DIR / TAGS_FILE)
         self._artist_name = dict(zip(artists[ITEM_COL], artists["name"]))
         self._artist_tags = _build_artist_top_tags(tagged, tags)
+        self._image_cache: dict[str, str | None] = {}  # artist name -> photo URL
 
         self._train, self._test = leave_n_out_split(interactions, seed=DEFAULT_SEED)
         self.user_ids = sorted(self._train[USER_COL].unique().tolist())
@@ -148,6 +154,33 @@ class RecommenderService:
             # Deterministic colour per artist for the avatar tile.
             hue=zlib.crc32(name.encode("utf-8")) % 360,
         )
+
+    def _fetch_image(self, name: str) -> str | None:
+        """Resolve an artist photo via the free Deezer API (cached; None on failure)."""
+        if name in self._image_cache:
+            return self._image_cache[name]
+        url: str | None = None
+        try:
+            q = urllib.parse.quote(name)
+            api = f"https://api.deezer.com/search/artist?q={q}&limit=1"
+            with urllib.request.urlopen(
+                api, timeout=3
+            ) as resp:  # noqa: S310 (trusted host)
+                hits = json.loads(resp.read()).get("data") or []
+            if hits:
+                url = hits[0].get("picture_medium") or None
+        except Exception:  # noqa: BLE001 - any failure just falls back to the letter tile
+            url = None
+        self._image_cache[name] = url
+        return url
+
+    def attach_images(self, recs: list[Recommendation]) -> list[Recommendation]:
+        """Fill in artist photos for a list of recommendations (fetched concurrently)."""
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            images = list(pool.map(self._fetch_image, [r.name for r in recs]))
+        for rec, image in zip(recs, images):
+            rec.image = image
+        return recs
 
     def recommend(self, method: str | None, user_id: int) -> list[Recommendation]:
         """Top-N recommendations for a user under the chosen method."""

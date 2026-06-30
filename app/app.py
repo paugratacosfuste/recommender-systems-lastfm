@@ -32,7 +32,10 @@ def index() -> str:
     selected_user = int(raw_user) if raw_user.isdigit() else service.user_ids[0]
     selected_method = request.args.get("method", service.methods[0])
 
-    recommendations = service.recommend(selected_method, selected_user)
+    recommendations = service.attach_images(
+        service.recommend(selected_method, selected_user)
+    )
+    top_artists = service.attach_images(service.user_top_artists(selected_user))
     metrics = service.metrics(selected_method)
     k = int(metrics["k"])
 
@@ -90,7 +93,7 @@ def index() -> str:
         user_ids=service.user_ids,
         selected_user=selected_user,
         recommendations=recommendations,
-        top_artists=service.user_top_artists(selected_user),
+        top_artists=top_artists,
         method_description=service.description(selected_method),
         methods=service.methods,
         selected_method=selected_method,
