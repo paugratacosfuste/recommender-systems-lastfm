@@ -46,7 +46,7 @@ magnitude -> log-scaling / confidence weighting is justified).
 one screen -> one metric), then deepen. Seven modules: UI, EDA/preprocessing, popularity
 baseline, collaborative filtering, content-based, matrix factorisation, evaluation. Shared
 `src/recsys` package; Flask prototype; every method behind one `fit/recommend` interface so
-they are interchangeable. Test-driven, 81 tests, 94% coverage.
+they are interchangeable. Test-driven, 86 tests, 95% coverage.
 
 **5. Implicit-feedback design.** No "dislikes" exist. Treat plays as confidence:
 `c = 1 + alpha * log(1 + plays)` (Hu, Koren, Volinsky 2008). Log-scaling stops a few superfans

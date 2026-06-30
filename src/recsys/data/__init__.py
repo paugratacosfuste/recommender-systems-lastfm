@@ -1,10 +1,15 @@
 """Data loading, preprocessing, splitting, and exploratory statistics."""
 
 from recsys.data.eda import (
+    friend_degree,
+    friend_listening_overlap,
     gini,
+    interaction_quality,
     most_active_users,
     popularity_curve,
     summary_stats,
+    tag_frequency,
+    tags_per_artist,
     top_k_play_share,
 )
 from recsys.data.loader import (
@@ -40,4 +45,9 @@ __all__ = [
     "popularity_curve",
     "summary_stats",
     "top_k_play_share",
+    "interaction_quality",
+    "tag_frequency",
+    "tags_per_artist",
+    "friend_degree",
+    "friend_listening_overlap",
 ]

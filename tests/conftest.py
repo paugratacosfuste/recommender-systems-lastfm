@@ -7,6 +7,7 @@ import pytest
 
 from recsys.config import SAMPLE_DIR
 from recsys.data.loader import (
+    load_tags,
     load_user_artists,
     load_user_friends,
     load_user_tagged_artists,
@@ -34,3 +35,9 @@ def sample_tagged_artists() -> pd.DataFrame:
 def sample_friends() -> pd.DataFrame:
     """Tiny social graph: 1<->2, 1<->3, 3<->4."""
     return load_user_friends(SAMPLE_DIR / "user_friends.dat")
+
+
+@pytest.fixture
+def sample_tags() -> pd.DataFrame:
+    """Tag vocabulary fixture: 1=electronic, 2=idm, 3=art pop, 4=alternative, 5=rock."""
+    return load_tags(SAMPLE_DIR / "tags.dat")

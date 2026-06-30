@@ -179,6 +179,11 @@ def comparison_table() -> None:
     )
 
 
+def _eda_stats() -> dict:
+    """Headline EDA numbers from the generated CSV (single source of truth)."""
+    return pd.read_csv(DOCS / "eda_stats.csv", index_col=0)["value"].to_dict()
+
+
 def _content_variant_sentence() -> str:
     """One-line TF-IDF vs raw ablation result, read from the generated CSV."""
     df = pd.read_csv(DOCS / "content_tfidf_vs_raw.csv", index_col=0)
@@ -328,6 +333,40 @@ def build() -> None:
         "EDA notebook lists the top 10). This near-absence of low-activity users is why the "
         "cold-start analysis later finds essentially no cold users to stress-test."
     )
+    e = _eda_stats()
+    p(
+        "Data quality is clean - no duplicate user-artist pairs and no non-positive weights "
+        f"- but the play counts are extremely skewed: the median is {int(e['median_plays'])} "
+        f"plays while the maximum is a single super-fan with {int(e['max_plays']):,}, which "
+        "reinforces the case for log-scaling before modelling."
+    )
+    h2("3.1 Tags - the content metadata")
+    p(
+        f"Tags drive content-based filtering: {int(e['n_tag_assignments']):,} assignments "
+        f"across {int(e['n_tags']):,} distinct tags. They are long-tailed like the listening "
+        f"data, and crucially {int(e['untagged_artists']):,} artists ({e['untagged_pct']:.0f}%) "
+        "carry no tags at all - a hard ceiling on what content-based filtering can ever reach "
+        "(Figure 3)."
+    )
+    figure(
+        "tag_analysis.png",
+        "Figure 3. Top tags by assignment count (left) and the distribution of tags per "
+        "artist (right).",
+    )
+    h2("3.2 Friendships - the social signal")
+    p(
+        f"The friendship graph is dense ({int(e['n_friend_edges']):,} edges, "
+        f"{e['avg_friends_per_user']:.0f} friends per user on average) and, more importantly, "
+        f"informative: friend pairs share {e['friend_overlap_ratio']:.1f}x more listening "
+        f"overlap than random pairs (mean Jaccard {e['friend_jaccard']:.3f} versus "
+        f"{e['random_jaccard']:.3f}). This is the empirical justification for the social "
+        "recommender added later (Figure 4)."
+    )
+    figure(
+        "friendship_analysis.png",
+        "Figure 4. Friends-per-user distribution (left) and friend versus random listening "
+        "overlap (right).",
+    )
 
     story.append(PageBreak())
     h1("4. System design and engineering decisions")
@@ -347,7 +386,7 @@ def build() -> None:
             "<b>Hybrid implementation.</b> Core algorithms (cosine kNN, TF-IDF profiles, ALS) "
             "are hand-implemented to demonstrate understanding, while numpy / scipy / sklearn "
             "provide the heavy linear algebra for speed.",
-            "<b>Test-driven development.</b> 81 tests at 94% coverage, including closed-form and "
+            "<b>Test-driven development.</b> 86 tests at 95% coverage, including closed-form and "
             "known-answer checks for the numerically tricky pieces (metrics, the ALS update).",
             "<b>Agile, vertical-slice first.</b> A thin end-to-end path (load -> popularity -> "
             "one screen -> one metric) was built before deepening any module, de-risking "
@@ -430,21 +469,21 @@ def build() -> None:
     p(
         "Personalisation clearly works: every personalised method beats every popularity "
         "baseline on accuracy, and item-item CF roughly doubles to triples the baseline across "
-        "ranking metrics (Figure 3). Notably, the simpler item-item CF beats the more complex "
+        "ranking metrics (Figure 5). Notably, the simpler item-item CF beats the more complex "
         "ALS on this small, dense dataset - a reminder that sophistication is not automatically "
         "valuable."
     )
-    figure("eval_accuracy.png", "Figure 3. Accuracy at k=10 by method.")
+    figure("eval_accuracy.png", "Figure 5. Accuracy at k=10 by method.")
     p(
-        "But accuracy is not the whole story. Figure 4 shows that no method wins on coverage, "
-        "diversity, and novelty simultaneously, and Figure 5 makes the accuracy-versus-"
+        "But accuracy is not the whole story. Figure 6 shows that no method wins on coverage, "
+        "diversity, and novelty simultaneously, and Figure 7 makes the accuracy-versus-"
         "diversity tension explicit."
     )
     figure(
         "eval_beyond_accuracy.png",
-        "Figure 4. Beyond-accuracy metrics: coverage, diversity, novelty.",
+        "Figure 6. Beyond-accuracy metrics: coverage, diversity, novelty.",
     )
-    figure("eval_tradeoff.png", "Figure 5. The accuracy versus diversity trade-off.")
+    figure("eval_tradeoff.png", "Figure 7. The accuracy versus diversity trade-off.")
 
     story.append(PageBreak())
     p(
@@ -452,11 +491,11 @@ def build() -> None:
         "of artists to everyone (catalogue coverage near 0.001 and the highest exposure Gini), "
         "while content-based filtering is the least biased toward popular artists. Even "
         "user-user CF, though personalised, leans noticeably on crowd-pleasers. Training cost "
-        "and serving cost also differ sharply by method family (Figure 6)."
+        "and serving cost also differ sharply by method family (Figure 8)."
     )
     figure(
         "eval_scalability_bias.png",
-        "Figure 6. Popularity bias via exposure Gini (left) and training cost versus "
+        "Figure 8. Popularity bias via exposure Gini (left) and training cost versus "
         "accuracy (right).",
     )
     comparison_table()
@@ -477,10 +516,10 @@ def build() -> None:
         "needing only tags, can recommend 1,227 of those cold artists - its defining "
         "advantage. On the user side this dataset is a weak stress test: HetRec keeps roughly "
         "the top 50 artists per user, so almost every user has a similar amount of history and "
-        "accuracy is essentially flat across history quartiles (Figure 7); genuine cold users "
+        "accuracy is essentially flat across history quartiles (Figure 9); genuine cold users "
         "barely exist here."
     )
-    figure("cold_start.png", "Figure 7. Cold-user accuracy by training-history quartile.")
+    figure("cold_start.png", "Figure 9. Cold-user accuracy by training-history quartile.")
 
     story.append(PageBreak())
     h1("8. Recommendation examples")
@@ -564,8 +603,9 @@ def build() -> None:
         "py regenerates the multi-seed comparison; scripts/tune_als.py reproduces the ALS "
         "validation search; scripts/cold_start.py the cold-start analysis; "
         "scripts/recommendation_examples.py the examples; scripts/content_variant.py the "
-        "TF-IDF ablation; `python main.py` runs the whole pipeline end to end; the notebooks "
-        "regenerate every figure; and the full test suite (81 tests, 94% coverage) guards "
+        "TF-IDF ablation; scripts/eda_stats.py the EDA headline numbers; `python main.py` runs "
+        "the whole pipeline end to end; the notebooks "
+        "regenerate every figure; and the full test suite (86 tests, 95% coverage) guards "
         "correctness."
     )
 

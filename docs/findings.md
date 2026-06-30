@@ -5,6 +5,31 @@ method comparison, final remarks). Newest entries at the top.
 
 ---
 
+## EDA deepening pass (2026-06-30)
+
+The EDA was one-dimensional (all on user-artist plays); it now explores all four data
+sources plus data quality.
+
+**What was added**
+- `eda.py` helpers (tested): `interaction_quality`, `tag_frequency`, `tags_per_artist`,
+  `friend_degree`, `friend_listening_overlap`.
+- `scripts/eda_stats.py` -> `docs/eda_stats.csv` (single source for the report's EDA numbers).
+- `01_eda.ipynb` rebuilt: data-quality/outliers, a tag/genre section, and a friendship
+  section, with two new figures (`tag_analysis.png`, `friendship_analysis.png`).
+- Report section 3 expanded (3.1 Tags, 3.2 Friendships) with Figures 3-4; existing figures
+  renumbered to 5-9.
+- Tests: 86 total, 95% coverage.
+
+**New EDA findings**
+- **Outliers:** play counts are extreme - median 260, max 352,698 (one super-fan).
+- **Tags:** 186,479 assignments over 9,749 used tags, but **29% of artists (5,109) are
+  untagged** - a hard ceiling on content-based coverage. Median 5 tags/artist.
+- **Friendships:** dense (25,434 edges, ~13 friends/user) and meaningful - **friends share
+  4.3x more listening overlap than random pairs** (Jaccard 0.103 vs 0.024), the empirical
+  justification for the social recommender.
+
+---
+
 ## Guidelines alignment pass (2026-06-30)
 
 Cross-checked the project against the teacher's `recommender_assignment_placeholders`
