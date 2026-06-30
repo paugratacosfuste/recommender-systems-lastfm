@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Music Recommender - Method Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -63,6 +66,17 @@
             <li class="muted">No listening history.</li>
           {% endfor %}
         </ul>
+        {% if genre_mix %}
+        <h3 class="mini-title">Top genres</h3>
+        <div class="bars">
+          {% for g in genre_mix %}
+            <div class="bar-row">
+              <span class="bar-label">{{ g.tag }}</span>
+              <span class="bar-track"><span class="bar-fill" style="width: {{ (100 * g.count / genre_max)|round(0, 'floor') }}%"></span></span>
+            </div>
+          {% endfor %}
+        </div>
+        {% endif %}
       </section>
 
       <section class="panel recs-panel">
@@ -116,6 +130,24 @@
         {% endfor %}
       </div>
       {% endif %}
+    </section>
+
+    <section class="panel chart-panel">
+      <h2>Precision@{{ k }} across all methods</h2>
+      <p class="panel-sub">How the selected method (in green) ranks against the others. This is the
+        whole point of the project - no method wins on everything.</p>
+      <div class="bars compare">
+        {% for r in comparison %}
+          <div class="bar-row {{ 'active' if r.label == selected_method else '' }}">
+            <span class="bar-label wide">{{ r.label }}</span>
+            <span class="bar-track">
+              <span class="bar-fill {{ 'hot' if r.label == selected_method else '' }}"
+                    style="width: {{ (100 * r.value / comparison_max)|round(1) }}%"></span>
+            </span>
+            <span class="bar-val">{{ '%.3f'|format(r.value) }}</span>
+          </div>
+        {% endfor %}
+      </div>
     </section>
 
     <footer class="foot">

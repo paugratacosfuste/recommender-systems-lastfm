@@ -7,6 +7,7 @@ Later modules plug into the same registry - the app code does not change.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 
 import pandas as pd
@@ -157,6 +158,22 @@ class RecommenderService:
     def metrics(self, method: str | None) -> dict[str, float]:
         """Offline metrics for the chosen method."""
         return self._metrics[self._resolve(method)]
+
+    def comparison(self, metric: str = "precision_at_k") -> list[dict]:
+        """All methods' score on one metric, sorted descending (for the bar chart)."""
+        rows = [
+            {"label": label, "value": float(m.get(metric, 0.0))}
+            for label, m in self._metrics.items()
+        ]
+        return sorted(rows, key=lambda r: r["value"], reverse=True)
+
+    def user_genre_mix(self, user_id: int, n: int = 6) -> list[dict]:
+        """The user's dominant genres - tag counts across the artists they play."""
+        artist_ids = self._train.loc[self._train[USER_COL] == user_id, ITEM_COL]
+        counts: Counter[str] = Counter()
+        for aid in artist_ids:
+            counts.update(self._artist_tags.get(int(aid), []))
+        return [{"tag": tag, "count": c} for tag, c in counts.most_common(n)]
 
     def description(self, method: str | None) -> str:
         """One-line explanation of the chosen method."""

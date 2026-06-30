@@ -79,6 +79,12 @@ def index() -> str:
             },
         ]
 
+    # Visuals (pure-CSS bar charts).
+    comparison = service.comparison("precision_at_k")
+    comparison_max = max((r["value"] for r in comparison), default=1.0) or 1.0
+    genre_mix = service.user_genre_mix(selected_user)
+    genre_max = max((g["count"] for g in genre_mix), default=1)
+
     return render_template(
         "index.html",
         user_ids=service.user_ids,
@@ -91,6 +97,10 @@ def index() -> str:
         is_personalised="Popularity" not in selected_method,
         accuracy_cards=accuracy_cards,
         beyond_cards=beyond_cards,
+        comparison=comparison,
+        comparison_max=comparison_max,
+        genre_mix=genre_mix,
+        genre_max=genre_max,
         k=k,
         n_eval_users=int(metrics["n_users"]),
     )
