@@ -59,8 +59,11 @@
         <ul class="chips">
           {% for a in top_artists %}
             <li>
-              <span class="chip-name">{{ a.name }}</span>
-              {% if a.tags %}<span class="chip-tags">{{ a.tags|join(' · ') }}</span>{% endif %}
+              <span class="avatar" style="--h: {{ a.hue }}">{{ a.initial }}</span>
+              <span class="chip-text">
+                <span class="chip-name">{{ a.name }}</span>
+                {% if a.tags %}<span class="pills">{% for t in a.tags %}<span class="pill">{{ t }}</span>{% endfor %}</span>{% endif %}
+              </span>
             </li>
           {% else %}
             <li class="muted">No listening history.</li>
@@ -86,9 +89,10 @@
           {% for rec in recommendations %}
             <li class="rec-card">
               <span class="rank">{{ loop.index }}</span>
+              <span class="avatar" style="--h: {{ rec.hue }}">{{ rec.initial }}</span>
               <span class="rec-body">
                 <span class="rec-name">{{ rec.name }}</span>
-                {% if rec.tags %}<span class="rec-tags">{{ rec.tags|join(' · ') }}</span>{% endif %}
+                {% if rec.tags %}<span class="pills">{% for t in rec.tags %}<span class="pill">{{ t }}</span>{% endfor %}</span>{% endif %}
               </span>
             </li>
           {% else %}

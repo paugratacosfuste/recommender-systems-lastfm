@@ -7,6 +7,7 @@ Later modules plug into the same registry - the app code does not change.
 
 from __future__ import annotations
 
+import zlib
 from collections import Counter
 from dataclasses import dataclass, field
 
@@ -64,6 +65,8 @@ class Recommendation:
     name: str
     tags: list[str] = field(default_factory=list)
     plays: int | None = None
+    initial: str = "?"
+    hue: int = 0
 
 
 def _build_artist_top_tags(
@@ -134,11 +137,16 @@ class RecommenderService:
         return method if method in self._models else self.methods[0]
 
     def _artist(self, artist_id: int, plays: int | None = None) -> Recommendation:
+        name = self._artist_name.get(artist_id, f"#{artist_id}")
+        initial = next((ch for ch in name if ch.isalnum()), "?").upper()
         return Recommendation(
             artist_id=artist_id,
-            name=self._artist_name.get(artist_id, f"#{artist_id}"),
+            name=name,
             tags=self._artist_tags.get(artist_id, []),
             plays=plays,
+            initial=initial,
+            # Deterministic colour per artist for the avatar tile.
+            hue=zlib.crc32(name.encode("utf-8")) % 360,
         )
 
     def recommend(self, method: str | None, user_id: int) -> list[Recommendation]:

@@ -77,20 +77,32 @@ select:hover { border-color: var(--green); }
 .grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 1.25rem; margin-bottom: 1.25rem; }
 @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
 
-.chips { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.45rem; }
-.chips li { background: var(--bg3); border-radius: 8px; padding: 0.5rem 0.75rem; }
-.chip-name { font-weight: 600; display: block; }
-.chip-tags { color: var(--muted); font-size: 0.78rem; }
+/* artist avatar tile + genre pills */
+.avatar {
+  flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 1rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  background: linear-gradient(135deg, hsl(var(--h) 65% 45%), hsl(var(--h) 72% 26%));
+}
+.pills { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem; }
+.pill { background: rgba(29,185,84,0.16); color: #74e8a0; font-size: 0.66rem; font-weight: 600;
+  padding: 0.12rem 0.5rem; border-radius: 999px; white-space: nowrap; }
 
-.recs { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.45rem; }
-.rec-card { display: flex; align-items: center; gap: 0.8rem; background: var(--bg3);
-  border-radius: 8px; padding: 0.5rem 0.75rem; transition: background 0.12s ease; }
+.chips { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.chips li { display: flex; align-items: center; gap: 0.7rem; background: var(--bg3);
+  border-radius: 10px; padding: 0.5rem 0.7rem; }
+.chip-text { display: flex; flex-direction: column; min-width: 0; }
+.chip-name { font-weight: 600; }
+
+.recs { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+@media (max-width: 560px) { .recs { grid-template-columns: 1fr; } }
+.rec-card { display: flex; align-items: center; gap: 0.65rem; background: var(--bg3);
+  border-radius: 10px; padding: 0.5rem 0.65rem; transition: background 0.12s ease; min-width: 0; }
 .rec-card:hover { background: #333333; }
-.rank { flex: none; display: inline-flex; width: 1.8rem; height: 1.8rem; align-items: center;
-  justify-content: center; background: var(--green); color: #062b15; font-weight: 800; border-radius: 6px; font-size: 0.85rem; }
-.rec-body { display: flex; flex-direction: column; }
-.rec-name { font-weight: 600; }
-.rec-tags { color: var(--muted); font-size: 0.78rem; }
+.rank { flex: none; display: inline-flex; width: 1.5rem; height: 1.5rem; align-items: center;
+  justify-content: center; background: transparent; color: var(--muted); font-weight: 800; font-size: 0.85rem; }
+.rec-body { display: flex; flex-direction: column; min-width: 0; }
+.rec-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- bar charts (pure CSS) ---------- */
 .mini-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;
