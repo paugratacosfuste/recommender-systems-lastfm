@@ -300,9 +300,9 @@ def build() -> None:
         [
             "<b>Scale:</b> 1,892 users x 17,632 artists, 92,834 interactions.",
             "<b>Sparsity:</b> 99.72% of the user-artist matrix is empty.",
-            "<b>Side data:</b> 11,946 tags with 186,479 (user, artist, tag) assignments "
-            "(used by content-based filtering), and a 25,434-edge user friendship graph "
-            "(used by the social recommender).",
+            "<b>Side data:</b> an 11,946-tag vocabulary (9,749 of them actually applied) over "
+            "186,479 (user, artist, tag) assignments (used by content-based filtering), and a "
+            "25,434-edge user friendship graph (used by the social recommender).",
         ]
     )
 
@@ -343,7 +343,8 @@ def build() -> None:
     h2("3.1 Tags - the content metadata")
     p(
         f"Tags drive content-based filtering: {int(e['n_tag_assignments']):,} assignments "
-        f"across {int(e['n_tags']):,} distinct tags. They are long-tailed like the listening "
+        f"using {int(e['n_tags_applied']):,} of the {int(e['n_tag_vocabulary']):,} tags in the "
+        "vocabulary. They are long-tailed like the listening "
         f"data, and crucially {int(e['untagged_artists']):,} artists ({e['untagged_pct']:.0f}%) "
         "carry no tags at all - a hard ceiling on what content-based filtering can ever reach "
         "(Figure 3)."
@@ -542,7 +543,8 @@ def build() -> None:
             "diversity; declared friends are almost as useful as statistical neighbours.",
             "<b>Scalability is a trade, not a winner.</b> Memory-based CF trains in about 0.02s "
             "but stores an item-item similarity matrix that grows with the catalogue squared; "
-            "ALS pays about 6.3s of training but serves from compact factors in about 0.2ms.",
+            "ALS pays several seconds of training but serves from compact factors in about "
+            "0.2ms.",
             "<b>Honesty about metrics.</b> Exposure Gini is high for every method because ten "
             "slots across 1,884 users can only ever touch a fraction of 17,632 artists; it is "
             "read as a relative concentration measure, and intra-list diversity is only "

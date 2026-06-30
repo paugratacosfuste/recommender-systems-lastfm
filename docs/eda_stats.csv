@@ -9,7 +9,8 @@ max_plays,352698.0
 median_plays,260.0
 duplicate_pairs,0.0
 nonpositive_weights,0.0
-n_tags,9749.0
+n_tag_vocabulary,11946.0
+n_tags_applied,9749.0
 n_tag_assignments,186479.0
 n_tagged_artists,12523.0
 untagged_artists,5109.0

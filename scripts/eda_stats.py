@@ -13,6 +13,7 @@ import pandas as pd
 from recsys.config import (
     ARTISTS_FILE,
     RAW_DIR,
+    TAGS_FILE,
     USER_ARTISTS_FILE,
     USER_FRIENDS_FILE,
     USER_TAGGED_ARTISTS_FILE,
@@ -20,6 +21,7 @@ from recsys.config import (
 from recsys.data import eda
 from recsys.data.loader import (
     load_artists,
+    load_tags,
     load_user_artists,
     load_user_friends,
     load_user_tagged_artists,
@@ -33,6 +35,7 @@ def main() -> None:
     tagged = load_user_tagged_artists(RAW_DIR / USER_TAGGED_ARTISTS_FILE)
     friends = load_user_friends(RAW_DIR / USER_FRIENDS_FILE)
     artists = load_artists(RAW_DIR / ARTISTS_FILE)
+    tag_vocab = load_tags(RAW_DIR / TAGS_FILE)
 
     summary = eda.summary_stats(interactions)
     quality = eda.interaction_quality(interactions)
@@ -55,7 +58,8 @@ def main() -> None:
         "median_plays": int(quality["median_weight"]),
         "duplicate_pairs": int(quality["n_duplicate_pairs"]),
         "nonpositive_weights": int(quality["n_nonpositive_weight"]),
-        "n_tags": int(tagged["tag_id"].nunique()),
+        "n_tag_vocabulary": int(len(tag_vocab)),
+        "n_tags_applied": int(tagged["tag_id"].nunique()),
         "n_tag_assignments": int(len(tagged)),
         "n_tagged_artists": int(n_tagged),
         "untagged_artists": int(n_catalogue - n_tagged),
