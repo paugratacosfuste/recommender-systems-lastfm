@@ -1,7 +1,12 @@
 # Music Recommender - Individual Project
 
+**🔗 Live demo:** https://music-recommender-chxb.onrender.com
+*(free tier - the first load after idle can take ~50s while it wakes up, then it's fast)*
+
 A progressive music recommender prototype built on the Last.fm HetRec 2011 implicit-feedback
-dataset, for the ESADE Recommender Systems course (Prof. Marc Torrens).
+dataset, for the ESADE Recommender Systems course (Prof. Marc Torrens). It compares eight
+methods on accuracy and beyond-accuracy metrics, with a Flask app, a PDF report, and a slide
+deck.
 
 See `CLAUDE.md` for how the project is organised and `PLAN.md` for the module-by-module plan.
 
