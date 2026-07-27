@@ -12,7 +12,8 @@ requires-python = ">=3.11"
 where = ["src"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+# "." lets tests import the `app` package (the static-site build drives app.service).
+pythonpath = ["src", "."]
 testpaths = ["tests"]
 addopts = "--cov=recsys --cov-report=term-missing"
 
@@ -27,3 +28,4 @@ line-length = 90
 # plain `pip install` (not only the editable install), which legitimately needs E402.
 "main.py" = ["E402"]
 "scripts/cold_start.py" = ["E402"]
+"scripts/build_static_site.py" = ["E402"]

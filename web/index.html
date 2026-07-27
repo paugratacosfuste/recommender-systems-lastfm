@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Music Recommender - Method Explorer</title>
+  <meta name="description" content="Compare eight recommendation methods on the Last.fm HetRec 2011 dataset - see what each one suggests for a listener, and how good those suggestions actually are.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Placeholder rows shown for the one round trip it takes the precomputed JSON to
+       land. Kept here so style.css stays byte-identical to the Flask app's. */
+    .ph { background: var(--bg3); border-radius: 10px; height: 3.1rem; opacity: 0.55;
+          animation: pulse 1.4s ease-in-out infinite; }
+    .recs .ph { height: 3.1rem; }
+    .metric-cards .ph { height: 5.4rem; border-radius: 11px; }
+    @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.25; } }
+    @media (prefers-reduced-motion: reduce) { .ph { animation: none; } }
+    .error-note { color: #ff8a80; }
+  </style>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <h1>🎧 Music Recommender</h1>
+      <p class="tagline">
+        Compare eight recommendation methods on the Last.fm dataset - see what each one
+        suggests for a listener, and how good those suggestions actually are.
+      </p>
+      <ol class="steps">
+        <li><span>1</span> Pick a listener</li>
+        <li><span>2</span> Pick a method</li>
+        <li><span>3</span> Compare the picks &amp; the scores</li>
+      </ol>
+    </div>
+  </header>
+
+  <main class="container">
+    <noscript>
+      <div class="panel" style="margin-bottom:1.25rem">
+        <h2>JavaScript required</h2>
+        <p class="panel-sub">This demo renders precomputed recommendations in the browser.
+        Please enable JavaScript. All model training and evaluation was done offline in
+        Python - see the GitHub repository for the source.</p>
+      </div>
+    </noscript>
+
+    <div class="controls">
+      <div class="control">
+        <label for="user_id">Listener</label>
+        <select id="user_id" disabled>
+          <option>Loading listeners…</option>
+        </select>
+      </div>
+      <div class="control">
+        <label for="method">Method</label>
+        <select id="method">
+          <option>Item-item CF</option>
+          <option>Matrix factorisation (ALS)</option>
+          <option>User-user CF</option>
+          <option>Content-based</option>
+          <option>Social (friends)</option>
+          <option>Popularity (listeners)</option>
+          <option>Popularity (plays)</option>
+          <option>Popularity (damped)</option>
+        </select>
+      </div>
+      <div class="method-note">
+        <span class="badge generic" id="method-badge">&nbsp;</span>
+        <span class="method-desc" id="method-desc"></span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="panel taste-panel">
+        <h2 id="taste-title">What this listener plays</h2>
+        <p class="panel-sub">Their most-played artists (the model never sees these as "answers").</p>
+        <ul class="chips" id="top-artists">
+          <li class="ph"></li><li class="ph"></li><li class="ph"></li>
+        </ul>
+        <div id="genre-block" hidden>
+          <h3 class="mini-title">Top genres</h3>
+          <div class="bars" id="genre-bars"></div>
+        </div>
+      </section>
+
+      <section class="panel recs-panel">
+        <h2 id="recs-title">Recommended artists</h2>
+        <p class="panel-sub" id="recs-sub">Artists this user has not played yet.</p>
+        <ol class="recs" id="recs">
+          <li class="ph"></li><li class="ph"></li><li class="ph"></li><li class="ph"></li>
+        </ol>
+      </section>
+    </div>
+
+    <section class="panel scores-panel">
+      <div class="scores-head">
+        <h2 id="scores-title">How good is this method?</h2>
+        <p class="panel-sub" id="scores-sub">
+          Measured offline on held-out listening - hover any card for what it means.
+          Higher is better for all of these.
+        </p>
+      </div>
+
+      <h3 class="group-title">Accuracy <span class="muted">- did we predict what they listen to?</span></h3>
+      <div class="metric-cards" id="accuracy-cards">
+        <div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div>
+      </div>
+
+      <div id="beyond-block" hidden>
+        <h3 class="group-title">Beyond accuracy <span class="muted">- is it varied, fresh, and fair?</span></h3>
+        <div class="metric-cards" id="beyond-cards"></div>
+      </div>
+    </section>
+
+    <section class="panel chart-panel">
+      <h2 id="chart-title">Precision across all methods</h2>
+      <p class="panel-sub">How the selected method (in green) ranks against the others. This is the
+        whole point of the project - no method wins on everything.</p>
+      <div class="bars compare" id="comparison"></div>
+    </section>
+
+    <footer class="foot">
+      Last.fm HetRec 2011 · implicit feedback · prototype for the ESADE Recommender Systems
+      individual project. Tip: switch a niche listener between <em>Popularity</em> and
+      <em>Item-item CF</em> to see personalisation kick in.
+      <br>All 1,892 listeners × 8 methods were scored offline in Python and shipped as static
+      data, so this page loads instantly and never cold-starts.
+      <br>Artist photos via the Deezer API (resolved at build time; coloured initials where none exists).
+    </footer>
+  </main>
+</body>
+</html>
