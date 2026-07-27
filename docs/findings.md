@@ -5,6 +5,75 @@ method comparison, final remarks). Newest entries at the top.
 
 ---
 
+## Deployment rebuild - from a dead server to a static bundle (2026-07-27)
+
+The demo was unreachable. The professor reported twice that the page "just stays loading",
+and it reproduced exactly: `curl --max-time 180` against the Render URL returned
+`http_code=000`, connecting to the edge in 31 ms and then receiving **zero bytes for three
+minutes**. Not flakiness - a design flaw.
+
+**Root cause.** `app/app.py:25` constructs `RecommenderService()` at module import, which
+loads the raw dataset, fits all eight models, and evaluates each one over 1,884 held-out
+users (~15,000 `recommend()` calls) before Flask can answer anything. Measured locally:
+**12.6 s and 263 MB RSS**. Render's free tier spins a service down after 15 minutes idle and
+wakes it on 0.1 shared vCPU, where the same work takes minutes - longer than the platform's
+request timeout. Idle service + visitor = a request that never returns. Always-on is a paid
+feature, so the free tier could not be tuned into working.
+
+**The observation that fixed it.** None of that cost belongs at request time: per-request
+scoring is already **0.14-0.52 ms**. The expensive part is a pure function of the dataset,
+and the ALS seed is fixed, so the entire output space is finite and deterministic - 1,892
+users x 8 methods x top-10 = 15,136 lists.
+
+**What was built.** `scripts/build_static_site.py` runs the pipeline once offline and writes
+`web/` as static JSON; `web/app.js` (~11 KB, no framework) renders it. Deployed to Vercel as
+pure static files - no server, no serverless function, no database, so there is no cold start
+to be had. Design notes worth keeping:
+- Artist metadata is normalised into one columnar file (parallel arrays, interned tag vocab);
+  per-user payloads are just integer positions. 7,068 artists and 1,122 tags across the whole
+  catalogue of recommendations.
+- Per-user data is sharded by `user_id // 100`, so the browser derives the filename straight
+  from the query string and fetches the shard *in parallel* with the metadata rather than
+  after it. Switching method costs **zero** requests; switching listener costs one (~13 KB).
+- All float formatting happens in Python using the format strings from `app/app.py`, so the
+  static page cannot drift from what Flask rendered.
+- Total bundle 1.28 MB across 29 files; ~110 KB gzip on the first-paint critical path.
+
+**Technical challenges hit**
+- *Deezer silently poisoned the artwork cache.* The API signals quota breaches as an `error`
+  object inside an **HTTP 200**, so the naive `payload["data"] or []` read a throttled request
+  as "this artist has no photo" and cached it permanently. First run resolved 28% of artists;
+  after detecting the error object, pacing requests to ~9/s across workers, and separating a
+  retryable `__failed__` sentinel from a genuine negative, it resolved ~91%.
+- *`picture_medium` is 250x250, not 264x264* - the wrong size 404s every image. Only the
+  32-char hash varies, so that is all that is stored and the URL is rebuilt client-side.
+- *Deezer's "no photo" placeholder is the MD5 of the empty string*
+  (`d41d8cd98f00b204e9800998ecf8427e`), returned for ~8% of hits including Radiohead and
+  Coldplay. The Flask app rendered these as blank grey squares; they are now mapped to the
+  coloured-initial tile instead.
+- *Escaping.* Jinja auto-escapes and `innerHTML` does not, and 239 artists in this catalogue
+  have `&`, `<`, `>` or quotes in their names. All data-derived nodes are built with
+  `createElement` + `textContent`.
+- *Empty states are real, not defensive.* 7 users get **zero** item-item CF recommendations,
+  1 user gets only 2 content-based ones, and 17 have fewer than 6 played artists. Each Jinja
+  `{% for %}...{% else %}` branch had to be reproduced, and the "Top N artists" caption uses
+  the actual list length rather than a hardcoded 10.
+
+**Verification.** A parity harness rebuilt the view-model from the live `RecommenderService`
+and compared it against the static bundle for 14 users (chosen to cover short lists, sparse
+histories, non-ASCII names and HTML-significant characters) x 8 methods: recommendations,
+tags, hues, initials, play counts, genre mix, every metric card and the comparison chart all
+match exactly. A jsdom harness then ran `web/app.js` against the real JSON and asserted 40+
+rendering behaviours, including the zero-request method switch and the empty-state branches.
+Existing suite unchanged: 105 tests, 97% coverage.
+
+**Reflection for the deck.** This is the batch-precompute-then-serve split that production
+recommenders use for daily-mix style features. The deployment constraint forced a more honest
+architecture: training is offline and slow, serving is a lookup. Collapsing the two into one
+process is what made the app unservable in the first place.
+
+---
+
 ## EDA deepening pass (2026-06-30)
 
 The EDA was one-dimensional (all on user-artist plays); it now explores all four data

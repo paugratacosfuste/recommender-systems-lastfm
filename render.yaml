@@ -1,3 +1,13 @@
+# SUPERSEDED - kept for the record; the live demo is now the static build in web/.
+#
+# Why it was replaced: app/app.py builds RecommenderService at import, which loads the
+# dataset, fits all eight models and evaluates them over the held-out users (~13s locally,
+# minutes on a free shared CPU). Render's free tier spins the service down after 15 minutes
+# idle, so that entire cost landed on the next visitor and the request timed out before any
+# byte was sent - the page just span forever. Always-on is a paid feature, so the fix was to
+# stop needing a server at all: scripts/build_static_site.py precomputes every user x method
+# combination and web/ is served as static files.
+#
 # Render Blueprint - one-click deploy of the Flask prototype.
 # In Render: New -> Blueprint -> connect this repo -> Apply.
 services:
