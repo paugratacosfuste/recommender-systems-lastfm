@@ -23,12 +23,19 @@ WHAT we build.
 
 ## Running things
 
-- App (Flask): `flask --app app/app.py run --debug` (auto-reloads on edit). Served at
-  http://127.0.0.1:5000.
+- App (Flask, local dev): `flask --app app/app.py run --debug` (auto-reloads on edit). Served
+  at http://127.0.0.1:5000. This is the development surface, not what is deployed.
+- Static demo (what is deployed): `python scripts/build_static_site.py` writes `web/`, then
+  `python -m http.server 8000 --directory web` to preview. Deployed to Vercel from `web/`
+  with `npx vercel deploy --prod` (project `music-recommender-lastfm`, root directory `web`).
+  Live at https://music-recommender-lastfm.vercel.app.
 - Notebooks: `jupyter lab` from the project root. Notebooks import from the `src/recsys`
   package; they never define reusable logic inline - that lives in `src`.
 - Data download: `python scripts/download_data.py` (fetches and unpacks Last.fm HetRec 2011
   into `data/raw/`). Preprocessing scripts write cached parquet into `data/processed/`.
+- Documents: `python scripts/build_report.py` (report PDF) and
+  `python scripts/build_submission_links.py` (one-page link sheet). Both are generated -
+  never hand-edit the PDFs, or the URLs drift out of sync.
 
 ## Repository structure
 
@@ -39,17 +46,25 @@ Individual Assignment/
     raw/        # downloaded dataset (gitignored)
     processed/  # cached parquet artifacts (gitignored)
     sample/     # tiny fixture committed for tests
-  scripts/      # download_data.py, one-off preprocessing entrypoints
+    deezer_images.json  # artist artwork cache (committed; build input)
+  scripts/      # download_data.py, preprocessing, build_static_site.py, doc generators
   src/recsys/
     data/       # loading, preprocessing, confidence weighting, train/test split
     models/     # base, popularity, cf, content, mf  (one model = one module)
     eval/       # metrics (accuracy + beyond-accuracy) and the evaluation harness
     utils/
-  app/          # Flask app: app.py, templates/, static/
+  app/          # Flask app: app.py, service.py, templates/, static/  (local dev)
+  web/          # generated static demo - THIS is what is deployed (committed)
   notebooks/    # EDA and experiments only
   tests/        # mirrors src/recsys
-  docs/         # findings.md (running deck notes)
+  docs/         # findings.md (running deck notes), report + deck + link sheet
 ```
+
+`web/` is build output but is committed on purpose: it makes the deployed artefact
+reproducible and diffable, and lets Vercel deploy straight from the repo. Regenerate it with
+`scripts/build_static_site.py` rather than editing files under `web/data/` by hand. `web/app.js`
+and `web/index.html` ARE hand-written and are the real source for the front end;
+`web/style.css` is a verbatim copy of `app/static/style.css`.
 
 Keep files small and cohesive (200-400 lines typical, 800 max). One algorithm family per
 module file. Extract shared helpers into `utils/`.
@@ -64,7 +79,8 @@ module file. Extract shared helpers into `utils/`.
 
 ## Git workflow
 
-- Work on branch `pau_branch`. Commit directly to it (no per-module branches).
+- Work on `main`. Commit directly to it (no per-module branches). The submission links point
+  at this repository, so `main` must always reflect what was handed in.
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`, `perf:`.
 - Commit when a module's definition of done is met, or at meaningful checkpoints.
 - Never push unless Pau explicitly asks. No co-author/attribution lines (disabled globally).
@@ -82,6 +98,12 @@ module file. Extract shared helpers into `utils/`.
      the previous baseline).
   3. Tests pass and coverage stays >= 80%.
   4. Findings appended to `docs/findings.md`.
+  5. If it changes anything the UI shows, `scripts/build_static_site.py` is re-run and `web/`
+     is committed - otherwise the live demo silently disagrees with the report.
+
+**Never do slow work at import or request time.** The deployed demo died because
+`RecommenderService()` was constructed at module import: fitting and evaluation are batch
+concerns and belong in a build step. Serving is a lookup. Keep that boundary.
 
 ## Code style
 

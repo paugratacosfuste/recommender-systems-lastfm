@@ -387,7 +387,7 @@ def build() -> None:
             "<b>Hybrid implementation.</b> Core algorithms (cosine kNN, TF-IDF profiles, ALS) "
             "are hand-implemented to demonstrate understanding, while numpy / scipy / sklearn "
             "provide the heavy linear algebra for speed.",
-            "<b>Test-driven development.</b> 86 tests at 95% coverage, including closed-form and "
+            "<b>Test-driven development.</b> 105 tests at 97% coverage, including closed-form and "
             "known-answer checks for the numerically tricky pieces (metrics, the ALS update).",
             "<b>Agile, vertical-slice first.</b> A thin end-to-end path (load -> popularity -> "
             "one screen -> one metric) was built before deepening any module, de-risking "
@@ -398,6 +398,63 @@ def build() -> None:
         "Implicit feedback is handled with the Hu, Koren and Volinsky (2008) confidence "
         "formulation, c = 1 + alpha * log(1 + plays): every observed play is a weak-to-strong "
         "vote of confidence, sub-linear in the count so that a few superfans cannot dominate."
+    )
+
+    h2("4.1 Serving architecture: training is batch, serving is a lookup")
+    p(
+        "The most instructive engineering problem in this project surfaced only once the "
+        "prototype was deployed. The Flask app constructs its recommender at import time: it "
+        "loads the dataset, fits all eight models, and evaluates each one over the 1,884 "
+        "held-out users - roughly 15,000 scoring calls, measured at <b>12.6 seconds and 263 MB "
+        "of resident memory</b> on a modern laptop. That is acceptable locally and fatal in "
+        "production. The first deployment used a free container tier that suspends a service "
+        "after fifteen minutes of inactivity, so the entire start-up cost was paid by whoever "
+        "next opened the link. The request exceeded the platform timeout and returned nothing: "
+        "a request to the live URL connected to the edge in 31 ms and then delivered zero bytes "
+        "for three minutes."
+    )
+    p(
+        "The diagnosis matters more than the outage. Per-request scoring was never the problem - "
+        "serving one recommendation list takes <b>0.14 to 0.52 ms</b>. All of the cost sat in "
+        "fitting and evaluation, which are pure functions of the dataset, and because the ALS "
+        "seed is fixed the entire output space is finite and deterministic: 1,892 users x 8 "
+        "methods x top-10 is 15,136 lists. Nothing about that has to be computed while a user "
+        "waits."
+    )
+    p(
+        "The system was therefore split along the same line that production recommenders use for "
+        "daily-mix style features: <b>training is an offline batch job, serving is a lookup</b>. "
+        "A build script runs the pipeline once and writes every result - recommendations, taste "
+        "profiles, genre mixes and all metrics - as static JSON, rendered by a small amount of "
+        "browser JavaScript. The deployed artefact has no server, no database and no serverless "
+        "function, so there is no cold start available to suffer from. Load time went from "
+        "unbounded to roughly 0.11 s."
+    )
+    bullets(
+        [
+            "<b>Normalised, columnar data.</b> Artist metadata (name, tags, colour, initial) is "
+            "stored once in parallel arrays with an interned tag vocabulary; per-user payloads "
+            "carry integer positions only. 7,068 artists and 1,122 tags across every list.",
+            "<b>Sharded by user id.</b> Per-user data is grouped by user_id // 100 so the browser "
+            "derives the filename from the query string and fetches it in parallel with the "
+            "metadata. Switching method costs no network request at all; switching listener "
+            "costs one shard of about 13 KB.",
+            "<b>Formatting done once, in Python.</b> Every displayed number is rendered with the "
+            "same format strings the Flask view used, so the static page cannot drift from the "
+            "measured results.",
+            "<b>Artwork resolved at build time.</b> Album art is fetched offline rather than per "
+            "request. The provider reports quota breaches as an error object inside an HTTP 200, "
+            "so a naive reading records a throttled request as 'this artist has no photo' and "
+            "caches it permanently; adding that check, pacing requests and separating retryable "
+            "failures from genuine misses took coverage from 28% to 91%.",
+        ]
+    )
+    p(
+        "The result is a bundle of 1.28 MB across 29 files, of which about 150 KB (gzipped) is "
+        "on the critical path to first paint. Correctness was confirmed by rebuilding the view "
+        "model from the live service and diffing it against the static bundle across users "
+        "chosen to cover short lists, sparse histories, non-ASCII names and characters that are "
+        "significant in HTML."
     )
 
     h1("5. The eight methods and their reasoning")

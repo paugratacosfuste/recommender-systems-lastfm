@@ -117,6 +117,31 @@ Goal: prove the whole pipeline works before deepening anything.
 
 ---
 
+## Module 8 - Deployment and serving architecture (UX 20%, unplanned)
+
+Not in the original plan; it was forced by a production failure and turned out to be one of
+the more instructive parts of the project.
+
+- Problem: `app/app.py` constructs `RecommenderService()` at module import, which loads the
+  dataset, fits all eight models and evaluates them over 1,884 held-out users (~12.6 s, 263 MB).
+  On a free container tier that suspends when idle, that start-up cost is paid by the next
+  visitor, and the request exceeds the platform timeout - the page never loads at all.
+- Insight: per-request scoring is 0.14-0.52 ms. The expensive work is a pure function of the
+  dataset, and with a fixed ALS seed the output space is finite: 1,892 users x 8 methods x
+  top-10 = 15,136 lists. None of it needs to happen while someone waits.
+- Scope: `scripts/build_static_site.py` runs the pipeline once offline and writes `web/` as
+  static JSON (recommendations, taste profiles, genre mixes, all metrics, artwork); a small
+  vanilla-JS front end renders it. Deployed to Vercel as static files - no server, no
+  database, no serverless function, therefore no cold start.
+- Tests (TDD): schema and index integrity over the committed `data/sample/` fixture, plus a
+  guard that the cache-busting build tag matches between the generator and the front end.
+- DoD: the static bundle reproduces the Flask view model exactly (verified by a parity
+  harness over users covering short lists, sparse histories, non-ASCII and HTML-significant
+  names), the live URL responds in well under a second, and the architecture is written up in
+  `docs/findings.md` and the report.
+
+---
+
 ## Cross-cutting tracks
 
 - **Evaluation track (30%)**: `src/recsys/eval` is built incrementally (Module 3 -> 7),
@@ -124,11 +149,12 @@ Goal: prove the whole pipeline works before deepening anything.
   comparison.
 - **UX track (20%)**: the Flask app accretes features each module - user picker (M1),
   method switcher (M3), comparison view (M4+), tags + explanations (M5), and a final polish
-  pass for the demo.
+  pass for the demo. Shipping it publicly (M8) turned out to be part of UX too: a demo nobody
+  can open scores nothing.
 - **Deck track**: `docs/findings.md` is appended after every module so the final slide deck
   (technical challenges, method comparison, final remarks) assembles from real notes.
 
 ## Suggested sequencing
 
-Phase 0 slice -> M2 deepen -> M3 -> M4 -> M5 -> M6 -> M7 consolidation, with the UX and
-findings tracks advanced a little inside each module rather than left to the end.
+Phase 0 slice -> M2 deepen -> M3 -> M4 -> M5 -> M6 -> M7 consolidation -> M8 deployment, with
+the UX and findings tracks advanced a little inside each module rather than left to the end.
